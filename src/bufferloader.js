@@ -1,16 +1,19 @@
+import $ from 'jquery';
 function enableLoadingBar() {
-    document.getElementById('loaded').style.display = 'none';
-    document.getElementById('loadingBar').style.display = 'block';
-  
-    if (document.getElementById('customTrackToggle').checked) {
-      document.getElementById('customTrackToggle').click();
-    }
-  }
-  
-  function disableLoadingBar() {
-    document.getElementById('loadingBar').style.display = 'none';
-    document.getElementById('loaded').style.display = 'block';
-  }
+    $('#loaded').hide();
+    $('#loadingBar').show();
+
+    if ($('#customTrackToggle')[0].checked)
+        $('#customTrackToggle').trigger('click');
+}
+
+/**
+ * Hide loading bar and display page content when audio files are successfully decoded.
+ */
+function disableLoadingBar() {
+    $('#loadingBar').hide();
+    $('#loaded').show();
+}
   
 /* 
  * Most of the code in this file is credited to Boris Smus. In particular, his guide on "Abstracting the Web Audio API,"
