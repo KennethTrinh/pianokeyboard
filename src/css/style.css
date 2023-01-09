@@ -1,0 +1,53 @@
+#headerLogo {
+    height: 35px;
+    padding-right: 15px;
+    width: 35px;
+}
+
+#helpTable {
+    left: 50%;
+    margin-left: -439px;
+    margin-top: 20px;
+}
+
+#helpTable td {
+    text-align: center;
+}
+
+#loaded {
+    display: none;
+}
+
+#loadingBar {
+    bottom: 0;
+    left: 0;
+    margin: auto;
+    position: absolute;
+    right: 0;
+    text-align: center;
+    top: 0;
+}
+
+.h-button {
+    height: 100%;
+    text-transform: inherit;
+}
+
+.h-link-text {
+    color: white;
+    display: block;
+    text-decoration: none;
+}
+
+.spacer {
+    margin: auto;
+    padding-top: 10px;
+    text-align: center;
+}
+
+canvas {
+    border: 1px solid black;
+    display: block;
+    margin: auto;
+    padding: 0;
+}
