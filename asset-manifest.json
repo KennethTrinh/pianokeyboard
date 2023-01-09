@@ -1,16 +1,16 @@
 {
   "files": {
-    "main.css": "/pianokeyboard/static/css/main.073c9b0a.css",
-    "main.js": "/pianokeyboard/static/js/main.50c12aca.js",
+    "main.css": "/pianokeyboard/static/css/main.8b9b234a.css",
+    "main.js": "/pianokeyboard/static/js/main.5586df60.js",
     "static/js/787.c781c101.chunk.js": "/pianokeyboard/static/js/787.c781c101.chunk.js",
     "static/media/logo.svg": "/pianokeyboard/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
     "index.html": "/pianokeyboard/index.html",
-    "main.073c9b0a.css.map": "/pianokeyboard/static/css/main.073c9b0a.css.map",
-    "main.50c12aca.js.map": "/pianokeyboard/static/js/main.50c12aca.js.map",
+    "main.8b9b234a.css.map": "/pianokeyboard/static/css/main.8b9b234a.css.map",
+    "main.5586df60.js.map": "/pianokeyboard/static/js/main.5586df60.js.map",
     "787.c781c101.chunk.js.map": "/pianokeyboard/static/js/787.c781c101.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.073c9b0a.css",
-    "static/js/main.50c12aca.js"
+    "static/css/main.8b9b234a.css",
+    "static/js/main.5586df60.js"
   ]
 }
