@@ -9,6 +9,9 @@ import { Piano, KeyboardShortcuts, MidiNumbers } from 'react-piano';
 import 'react-piano/dist/styles.css';
 import './css/style.css';
 import DimensionsProvider from './DimensionsProvider';
+import SoundfontProvider from './SoundfontProvider';
+import PianoWithRecording from './PianoWithRecording';
+import _ from 'lodash';
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 const soundfontHostname = 'https://d1pzp51pvbm36p.cloudfront.net';
@@ -18,8 +21,8 @@ const noteRange = {
   last: MidiNumbers.fromNote('c8'),
 };
 const keyboardShortcuts = KeyboardShortcuts.create({
-  firstNote: noteRange.first,
-  lastNote: noteRange.last,
+  firstNote: MidiNumbers.fromNote('c4'),
+  lastNote: MidiNumbers.fromNote('c5'),
   keyboardConfig: KeyboardShortcuts.HOME_ROW,
 });
 function Home() {
@@ -31,14 +34,6 @@ function Home() {
           <img src={logo} id="headerLogo" />
           <span className="mdl-layout-title">Piano</span>
           <div className="mdl-layout-spacer"></div>
-          <nav className="mdl-navigation">
-            <a className="h-button mdl-button mdl-js-button mdl-js-ripple-effect" href="#">
-              <span className="h-link-text">Piano</span>
-            </a>
-            <a className="h-button mdl-button mdl-js-button mdl-js-ripple-effect" href="help.html">
-              <span className="h-link-text">Help</span>
-            </a>
-          </nav>
         </div>
       </header>
       <main className="mdl-layout__content" style={{flex: '1 0 auto'}}>
@@ -85,7 +80,7 @@ function Home() {
               </tr>
               </tbody>
           </table>
-          <Main />
+          <MyApp />
           <div className="spacer">
             <canvas id="visualizationCanvas" width="1280" height="300" />
           </div>
@@ -98,151 +93,125 @@ function Home() {
 }
 
 
-function Main() {
-  return (
-    <div>
-      <div className="mt-5">
-        <p>
-          Responsive piano which resizes to container's width.
-        </p>
-        <ResponsivePiano />
-      </div>
-      <div className="mt-5">
-        <p>Piano with custom styling - see styles.css</p>
-        <ResponsivePiano className="PianoDarkTheme" />
-      </div>
-    </div>
-  );
-}
-function ResponsivePiano(props) {
-  return (
-    <DimensionsProvider>
-      {({ containerWidth, containerHeight }) => (
-        <SoundfontProvider
-          instrumentName="acoustic_grand_piano"
-          audioContext={audioContext}
-          hostname={soundfontHostname}
-          render={({ isLoading, playNote, stopNote }) => (
-            <Piano
-              noteRange={noteRange}
-              width={containerWidth}
-              playNote={playNote}
-              stopNote={stopNote}
-              disabled={isLoading}
-              {...props}
-            />
-          )}
-        />
-      )}
-    </DimensionsProvider>
-  );
-}
 
-
-
-class SoundfontProvider extends React.Component {
-  static propTypes = {
-    instrumentName: PropTypes.string.isRequired,
-    hostname: PropTypes.string.isRequired,
-    format: PropTypes.oneOf(['mp3', 'ogg']),
-    soundfont: PropTypes.oneOf(['MusyngKite', 'FluidR3_GM']),
-    audioContext: PropTypes.instanceOf(window.AudioContext),
-    render: PropTypes.func,
-  };
-
-  static defaultProps = {
-    format: 'mp3',
-    soundfont: 'MusyngKite',
-    instrumentName: 'acoustic_grand_piano',
+class MyApp extends React.Component {
+  state = {
+    recording: {
+      mode: 'RECORDING',
+      events: [],
+      currentTime: 0,
+      currentEvents: [],
+    },
   };
 
   constructor(props) {
     super(props);
-    this.state = {
-      activeAudioNodes: {},
-      instrument: null,
-    };
+    this.scheduledEvents = [];
   }
 
-  componentDidMount() {
-    this.loadInstrument(this.props.instrumentName);
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    if (prevProps.instrumentName !== this.props.instrumentName) {
-      this.loadInstrument(this.props.instrumentName);
+  getRecordingEndTime = () => {
+    if (this.state.recording.events.length === 0) {
+      return 0;
     }
-  }
+    return Math.max(
+      ...this.state.recording.events.map(event => event.time + event.duration),
+    );
+  };
 
-  loadInstrument = instrumentName => {
-    // Re-trigger loading state
+  setRecording = value => {
     this.setState({
-      instrument: null,
-    });
-    Soundfont.instrument(this.props.audioContext, instrumentName, {
-      format: this.props.format,
-      soundfont: this.props.soundfont,
-      nameToUrl: (name, soundfont, format) => {
-        return `${this.props.hostname}/${soundfont}/${name}-${format}.js`;
-      },
-    }).then(instrument => {
-      this.setState({
-        instrument,
-      });
+      recording: Object.assign({}, this.state.recording, value),
     });
   };
 
-  playNote = midiNumber => {
-    this.props.audioContext.resume().then(() => {
-      const audioNode = this.state.instrument.play(midiNumber);
-      this.setState({
-        activeAudioNodes: Object.assign({}, this.state.activeAudioNodes, {
-          [midiNumber]: audioNode,
-        }),
-      });
+  onClickPlay = () => {
+    this.setRecording({
+      mode: 'PLAYING',
+    });
+    const startAndEndTimes = _.uniq(
+      _.flatMap(this.state.recording.events, event => [
+        event.time,
+        event.time + event.duration,
+      ]),
+    );
+    startAndEndTimes.forEach(time => {
+      this.scheduledEvents.push(
+        setTimeout(() => {
+          const currentEvents = this.state.recording.events.filter(event => {
+            return event.time <= time && event.time + event.duration > time;
+          });
+          this.setRecording({
+            currentEvents,
+          });
+        }, time * 1000),
+      );
+    });
+    // Stop at the end
+    setTimeout(() => {
+      this.onClickStop();
+    }, this.getRecordingEndTime() * 1000);
+  };
+
+  onClickStop = () => {
+    this.scheduledEvents.forEach(scheduledEvent => {
+      clearTimeout(scheduledEvent);
+    });
+    this.setRecording({
+      mode: 'RECORDING',
+      currentEvents: [],
     });
   };
 
-  stopNote = midiNumber => {
-    this.props.audioContext.resume().then(() => {
-      if (!this.state.activeAudioNodes[midiNumber]) {
-        return;
-      }
-      const audioNode = this.state.activeAudioNodes[midiNumber];
-      audioNode.stop();
-      this.setState({
-        activeAudioNodes: Object.assign({}, this.state.activeAudioNodes, {
-          [midiNumber]: null,
-        }),
-      });
-    });
-  };
-
-  // Clear any residual notes that don't get called with stopNote
-  stopAllNotes = () => {
-    this.props.audioContext.resume().then(() => {
-      const activeAudioNodes = Object.values(this.state.activeAudioNodes);
-      activeAudioNodes.forEach(node => {
-        if (node) {
-          node.stop();
-        }
-      });
-      this.setState({
-        activeAudioNodes: {},
-      });
+  onClickClear = () => {
+    this.onClickStop();
+    this.setRecording({
+      events: [],
+      mode: 'RECORDING',
+      currentEvents: [],
+      currentTime: 0,
     });
   };
 
   render() {
-    return this.props.render({
-      isLoading: !this.state.instrument,
-      playNote: this.playNote,
-      stopNote: this.stopNote,
-      stopAllNotes: this.stopAllNotes,
-    });
+    return (
+      <div>
+        <div className="mt-5">
+        <DimensionsProvider>
+          {({ containerWidth, containerHeight }) => (
+          <SoundfontProvider
+            instrumentName="acoustic_grand_piano"
+            audioContext={audioContext}
+            hostname={soundfontHostname}
+            render={({ isLoading, playNote, stopNote }) => (
+              <PianoWithRecording
+                recording={this.state.recording}
+                setRecording={this.setRecording}
+                noteRange={noteRange}
+                width={containerWidth}
+                keyWidthToHeight={0.2}
+                playNote={playNote}
+                stopNote={stopNote}
+                disabled={isLoading}
+                // keyboardShortcuts={keyboardShortcuts}
+              />
+            )}
+          />
+          )}
+        </DimensionsProvider>
+        </div>
+        <div className="mt-5">
+          <button onClick={this.onClickPlay}>Play</button>
+          <button onClick={this.onClickStop}>Stop</button>
+          <button onClick={this.onClickClear}>Clear</button>
+        </div>
+        <div className="mt-5">
+          <strong>Recorded notes</strong>
+          <div>{JSON.stringify(this.state.recording.events)}</div>
+        </div>
+      </div>
+    );
   }
 }
-
 
 
 const synth = new Tone.Synth().toDestination();
