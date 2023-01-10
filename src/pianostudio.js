@@ -1,4 +1,3 @@
-import { BufferLoader } from './bufferloader.js';
 import $ from 'jquery';
 /**
  * Initialize variables, draw piano, connect audio nodes, load buffers, and register event listeners.
@@ -44,8 +43,11 @@ export function init() {
             './sounds/sampletrack.mp3'
         ]
     );
-
-    drawPiano(pianoCanvasContext, pianoCanvas.width, pianoCanvas.height, whiteKeyWidth, blackKeyWidth);
+    // console.log($(document).width());
+    // console.log($(document). height());
+    // console.log(window.innerWidth);
+    // console.log(window.innerHeight);
+    drawPiano(pianoCanvasContext,  pianoCanvas.width, pianoCanvas.height, whiteKeyWidth, blackKeyWidth);
     window.requestAnimationFrame(function () {
         drawVisualizer(visualizationCanvasContext, visualizationCanvas.width, visualizationCanvas.height, analyzer);
     });
@@ -147,6 +149,17 @@ export function init() {
         var fraction = parseInt(this.value) / parseInt(this.max);
         trackGain.gain.value = fraction * fraction;
     });
+    
+    $(window).on("resize", () => {
+        // var rect = pianoCanvas.parentNode.getBoundingClientRect();
+        // console.log(rect);
+        // pianoCanvas.width = rect.width;
+        whiteKeyWidth = window.innerWidth / 28;
+        blackKeyWidth = 2 * whiteKeyWidth / 3;
+        // console.log(document.innerWidth / 28);
+        // console.log(2 * document.innerWidth / 28 / 3);
+        drawPiano(pianoCanvasContext, window.innerWidth, pianoCanvas.height, whiteKeyWidth, blackKeyWidth);
+    });
 }
 
 /**
@@ -219,24 +232,7 @@ function drawVisualizer(canvasContext, canvasWidth, canvasHeight, analyzer) {
     });
 }
 
-/**
- * Hide page content and display loading bar while audio files are being decoded.
- */
-function enableLoadingBar() {
-    $('#loaded').hide();
-    $('#loadingBar').show();
 
-    if ($('#customTrackToggle')[0].checked)
-        $('#customTrackToggle').trigger('click');
-}
-
-/**
- * Hide loading bar and display page content when audio files are successfully decoded.
- */
-function disableLoadingBar() {
-    $('#loadingBar').hide();
-    $('#loaded').show();
-}
 
 /**
  * Connect the decoded piano key audio buffer to the AudioContext and play the key.
