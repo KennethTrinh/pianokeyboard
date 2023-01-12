@@ -1,10 +1,8 @@
 import logo from './logo.svg';
-import React, { useEffect }  from 'react';
+import React, { useEffect, useState, useRef }  from 'react';
 import './css/style.css';
 import './css/material.min.css';
 import * as Tone from 'tone';
-import PropTypes from 'prop-types';
-import Soundfont from 'soundfont-player';
 import { Piano, KeyboardShortcuts, MidiNumbers } from 'react-piano';
 import 'react-piano/dist/styles.css';
 import './css/style.css';
@@ -12,6 +10,7 @@ import DimensionsProvider from './DimensionsProvider';
 import SoundfontProvider from './SoundfontProvider';
 import PianoWithRecording from './PianoWithRecording';
 import _ from 'lodash';
+import { Midi } from '@tonejs/midi'
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 const soundfontHostname = 'https://d1pzp51pvbm36p.cloudfront.net';
@@ -85,14 +84,36 @@ function Home() {
             <canvas id="visualizationCanvas" width="1280" height="300" />
           </div>
         </div>
-      < MyComponent />
+      < ToneJs />
       </main>
     </div>
   </div>
   );
 }
 
+const MidiReader = ({ onMidiArray }) => {
+  const [file, setFile] = useState(null);
 
+  const parseFile = file => {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const midi = new Midi(e.target.result);
+      onMidiArray(midi);
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  useEffect(() => {
+    if (file) 
+      parseFile(file);
+  }, [file]);
+
+  return (
+    <>
+      <input type="file" accept="audio/midi" onChange={(event) => setFile(event.target.files[0])} />
+    </>
+  );
+};
 
 class MyApp extends React.Component {
   state = {
@@ -120,9 +141,10 @@ class MyApp extends React.Component {
 
   setRecording = value => {
     this.setState({
-      recording: Object.assign({}, this.state.recording, value),
+      recording: {...this.state.recording, ...value}//Object.assign({}, this.state.recording, value),
     });
   };
+
 
   onClickPlay = () => {
     this.setRecording({
@@ -160,6 +182,7 @@ class MyApp extends React.Component {
       mode: 'RECORDING',
       currentEvents: [],
     });
+    this.scheduledEvents = [];
   };
 
   onClickClear = () => {
@@ -169,6 +192,23 @@ class MyApp extends React.Component {
       mode: 'RECORDING',
       currentEvents: [],
       currentTime: 0,
+    });
+  };
+
+  handleMidiArray = (obj) => {
+    const allNotes = [];
+    obj.tracks.forEach(track => {
+      track.notes.forEach(note => {
+        allNotes.push({
+          "midiNumber": note.midi,
+          "time": note.time,
+          "duration": note.duration
+        });
+      });
+    });
+    this.setRecording({ //this.state.recording.events is the sequence of notes
+      events: allNotes,
+      currentTime: obj.duration
     });
   };
 
@@ -208,7 +248,9 @@ class MyApp extends React.Component {
           <strong>Recorded notes</strong>
           <div>{JSON.stringify(this.state.recording.events)}</div>
         </div>
+        <MidiReader onMidiArray={this.handleMidiArray} />
       </div>
+      
     );
   }
 }
@@ -220,7 +262,7 @@ synth.envelope.attack = 0.001;
 synth.envelope.decay = 0.1;
 synth.envelope.sustain = 0.1;
 synth.envelope.release = 0.1;
-function MyComponent() {
+function ToneJs() {
   // Schedule a change in the oscillator's frequency
   synth.oscillator.frequency.setValueAtTime(440, Tone.now() + 1);
 
