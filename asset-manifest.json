@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/pianokeyboard/static/css/main.ecc2e519.css",
-    "main.js": "/pianokeyboard/static/js/main.569064e5.js",
+    "main.js": "/pianokeyboard/static/js/main.b422f4d1.js",
     "static/js/787.c781c101.chunk.js": "/pianokeyboard/static/js/787.c781c101.chunk.js",
     "static/media/logo.svg": "/pianokeyboard/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
     "index.html": "/pianokeyboard/index.html",
     "main.ecc2e519.css.map": "/pianokeyboard/static/css/main.ecc2e519.css.map",
-    "main.569064e5.js.map": "/pianokeyboard/static/js/main.569064e5.js.map",
+    "main.b422f4d1.js.map": "/pianokeyboard/static/js/main.b422f4d1.js.map",
     "787.c781c101.chunk.js.map": "/pianokeyboard/static/js/787.c781c101.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.ecc2e519.css",
-    "static/js/main.569064e5.js"
+    "static/js/main.b422f4d1.js"
   ]
 }
