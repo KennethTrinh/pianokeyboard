@@ -56,7 +56,8 @@ class SoundfontProvider extends React.Component {
     });
   };
 
-  playNote = midiNumber => {
+  playNote = midiNumber => { // this is called when the state.recordiing.mode changes in parent component
+    console.log('playNote', midiNumber);
     this.props.audioContext.resume().then(() => {
       const audioNode = this.state.instrument.play(midiNumber);
       this.setState({
@@ -81,28 +82,12 @@ class SoundfontProvider extends React.Component {
       });
     });
   };
-
-  // Clear any residual notes that don't get called with stopNote
-  stopAllNotes = () => {
-    this.props.audioContext.resume().then(() => {
-      const activeAudioNodes = Object.values(this.state.activeAudioNodes);
-      activeAudioNodes.forEach(node => {
-        if (node) {
-          node.stop();
-        }
-      });
-      this.setState({
-        activeAudioNodes: {},
-      });
-    });
-  };
-
+  
   render() {
     return this.props.render({
       isLoading: !this.state.instrument,
       playNote: this.playNote,
       stopNote: this.stopNote,
-      stopAllNotes: this.stopAllNotes,
     });
   }
 }

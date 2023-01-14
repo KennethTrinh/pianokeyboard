@@ -139,18 +139,49 @@ class MyApp extends React.Component {
     );
   };
 
+  // for debugging: delete when done
+  print = value => {
+    console.log( {
+      recording: {...this.state.recording, ...value}//Object.assign({}, this.state.recording, value),
+    });
+  };
+
   setRecording = value => {
     this.setState({
       recording: {...this.state.recording, ...value}//Object.assign({}, this.state.recording, value),
     });
   };
 
+  // if time + duration == time of another event, and the other event has the same midiNumber, add 0.0001
+  preprocess = () => {
+    const DECREMENT = 0.005;
+    let arr = this.state.recording.events;
+    let endTimes = {}
+    arr.forEach(midi => {
+        if (!endTimes[midi.time + midi.duration]) {
+            endTimes[midi.time + midi.duration] = []
+        }
+        endTimes[midi.time + midi.duration].push(midi)
+    });
+    let corrections = 0
+    arr.forEach(midi => {
+        if (midi.time in endTimes) {
+            let updates = endTimes[midi.time]
+            updates.forEach(midiToUpdate => {
+                if (midiToUpdate.midiNumber === midi.midiNumber) {
+                    midiToUpdate.duration -= DECREMENT;
+                    corrections += 1;
+                }
+            });
+        }
+    });
+    this.setState( {recording: {currentTime: this.state.recording.currentTime - corrections * DECREMENT, events: arr}});
+    this.print( {currentTime: this.state.recording.currentTime - corrections * DECREMENT, events: arr});
+    }
 
   onClickPlay = () => {
-    this.setRecording({
-      mode: 'PLAYING',
-    });
-    const startAndEndTimes = _.uniq(
+    this.preprocess();
+    const startAndEndTimes = _.uniq( 
       _.flatMap(this.state.recording.events, event => [
         event.time,
         event.time + event.duration,
@@ -162,10 +193,9 @@ class MyApp extends React.Component {
           const currentEvents = this.state.recording.events.filter(event => {
             return event.time <= time && event.time + event.duration > time;
           });
-          this.setRecording({
-            currentEvents,
-          });
-        }, time * 1000),
+
+          this.setRecording({currentEvents: currentEvents, mode: 'PLAYING'})
+        }, time * 1000)
       );
     });
     // Stop at the end
@@ -173,6 +203,57 @@ class MyApp extends React.Component {
       this.onClickStop();
     }, this.getRecordingEndTime() * 1000);
   };
+
+
+/*
+startNotes = (midis) => {
+  return new Promise((resolve) => {
+    midis.forEach(midi => {
+      this.scheduledEvents.push(setTimeout(() => {
+        this.setRecording({ mode:'PLAYING', currentEvents: [midi] });
+        resolve();
+        console.log('startNotes done');
+      }, midi.duration * 1000));
+    });
+  });
+}
+
+stopNotes = (midis) => {
+  return new Promise((resolve) => {
+    const maxDuration = Math.max(...midis.map(midi => midi.duration));
+    setTimeout(() => {
+      this.onClickStop();
+      resolve();
+      console.log('stopNotes done');
+    }, maxDuration * (1) * 1000);
+  });
+}
+
+playNotes = async (midis) => {
+  await this.startNotes(midis);
+  await this.stopNotes(midis);
+  return;
+}
+
+
+  onClickPlay = async () => {
+    const buffer = this.state.recording.events;
+    // let arr = [[]], time = buffer[0].time;
+    // for (let i = 0; i < buffer.length; i++) {
+    //   if (buffer[i].time === time) {
+    //     arr[arr.length - 1].push(buffer[i]);
+    //   } else {
+    //     await new Promise(resolve => setTimeout(resolve, console.log( arr[arr.length - 1], time )));
+    //     arr.push([buffer[i]]);
+    //     time = buffer[i].time;
+    //   }
+    // }
+    await this.playNotes([buffer[0], buffer[3]]);
+    await this.playNotes([buffer[1], buffer[4]]);
+    await this.playNotes([buffer[2], buffer[5]]);
+}
+*/
+
 
   onClickStop = () => {
     this.scheduledEvents.forEach(scheduledEvent => {
@@ -212,6 +293,23 @@ class MyApp extends React.Component {
     });
   };
 
+  test = () => {
+    this.setRecording({
+      events: [
+        { midiNumber: 60, time: 0, duration: 1}, 
+        { midiNumber: 60, time: 1, duration: 1}, // 1.01 --> time > prevTime + prevDuration
+        { midiNumber: 60, time: 2, duration: 1}, // 2.02
+        { midiNumber: 63, time: 0, duration: 2},
+        { midiNumber: 64, time: 1, duration: 1}, 
+        { midiNumber: 65, time: 2, duration: 1}, 
+        // { midiNumber: 96, time: 0, duration: 0.5}, 
+        // { midiNumber: 99, time: 0.5, duration: 0.5}, 
+
+      ],
+      currentTime: 3
+    })
+  }
+
   render() {
     return (
       <div>
@@ -243,6 +341,7 @@ class MyApp extends React.Component {
           <button onClick={this.onClickPlay}>Play</button>
           <button onClick={this.onClickStop}>Stop</button>
           <button onClick={this.onClickClear}>Clear</button>
+          <button onClick={this.test}>Test</button>
         </div>
         <div className="mt-5">
           <strong>Recorded notes</strong>
