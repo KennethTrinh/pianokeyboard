@@ -7,15 +7,19 @@ const AudioPlayer = () => {
   const [player, setPlayer] = useState(null);
   const playStateRef = useRef(null);
   const sliderRef = useRef(null);
-  const currentTimeRef = useRef(null);
+  const discreteCurrentTimeRef = useRef(null);
+  const currentTimeRef = useRef({current: {textContent: '0'} });
   const [playButtonDisabled, setPlayButtonDisabled] = useState(false);
   const [stopButtonDisabled, setStopButtonDisabled] = useState(true);
   const [pauseButtonDisabled, setPauseButtonDisabled] = useState(true);
   const [resumeButtonDisabled, setResumeButtonDisabled] = useState(true);
-  const [currentTime, setCurrentTime] = useState(0);
   const [noteObjects, setNoteObjects] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
   let intervalId = null;
+  // const [currentTime, setCurrentTime] = useState(0);
+  const sliderDown = useRef(false);
+  const sliderScrollValue = useRef('0');
+  // console.log('render');
     
 
   const handleFileChange = async (event) => {
@@ -28,52 +32,93 @@ const AudioPlayer = () => {
 
   useEffect(() => {
     if (noteSequence) {
-      setNoteObjects(writeNoteSeqs([noteSequence])[0]);
+      setNoteObjects(writeNoteSeqs(noteSequence).sort((a, b) => a.startTime - b.startTime));
       setPlayer( new mm.SoundFontPlayer('https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus', undefined, undefined, undefined,
           {
           run: (note) => {
             // console.log(`Pitch: ${note.pitch}, Velocity: ${note.velocity}, StartTime: ${note.startTime}, EndTime: ${note.endTime}`);
-            sliderRef.current.value = currentTimeRef.current.textContent = note.startTime.toFixed(1);
+            sliderRef.current.value = sliderDown.current ? sliderScrollValue.current : note.startTime.toFixed(1);
+            discreteCurrentTimeRef.current.textContent = note.startTime.toFixed(1);
             // setCurrentTime(note.startTime);
           },
-          stop: () => {} 
+          stop: () => { 
+            setIsPlaying(false);
+            setPlayButtonDisabled(false);
+            setStopButtonDisabled(true);
+            setPauseButtonDisabled(true);
+            setResumeButtonDisabled(true);
+            } 
         }))
 
     }
   }, [noteSequence]);
 
-  // useEffect(() => {
-  //   if (noteSequence && player) {
-  //       const currentNoteObjectIndex = noteObjects.length * currentTime / noteSequence.totalTime.toFixed(1)  //noteObjects[Math.floor(currentTime) ];
-  //       const currentNoteObject = noteObjects[ Math.floor(currentNoteObjectIndex) ];
-  //       console.log(currentNoteObjectIndex);
-  //   }
-  // }, [currentTime])
+  const binarySearch = (noteObjects, currentTime) => {
+    let left = 0;
+    let right = noteObjects.length - 1;
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+      if (noteObjects[mid].startTime <= currentTime && currentTime < noteObjects[mid].endTime) {
+        return mid;
+      } else if (currentTime < noteObjects[mid].startTime) {
+        right = mid - 1;
+      } else {
+        left = mid + 1;
+      }
+    }
+    return -1;
+  }
 
-  // useEffect(() => {
-  //   if (isPlaying) {
-  //     intervalId = setInterval(() => {
-  //     setCurrentTime((prevTime) => (prevTime + 0.1));
-  //     console.log(currentTime);
-  //     }, 100);
-  //   } else {
-  //     clearInterval(intervalId);
-  //   }
-  //     return () => clearInterval(intervalId);
-  //   }, [isPlaying]);
+  const processAudio = () => {
+    if (noteSequence && player) {
+        const currentTime = parseFloat(currentTimeRef.current.textContent);
+        const currentNoteIndex = binarySearch(noteObjects, currentTime);
+        const startIndex = Math.max(0, currentNoteIndex - 44);
+        const endIndex = Math.min(noteObjects.length, currentNoteIndex + 44);
+        const buffer = noteObjects.slice(startIndex, endIndex);
+        const currentNotes = currentNoteIndex === -1 ? [] :  
+                  buffer.filter(note => {
+                  return currentTime >= parseFloat(note.startTime) && currentTime < parseFloat(note.endTime);
+              });
+        console.log(currentNotes);
+        // console.log(currentTime);
+        // console.log(currentTime, currentNotes, currentNoteObjectIndex);
+        // console.log(buffer);
+        
+    }
+  }
+
+
+
+  useEffect(() => {
+    if (isPlaying) {
+      intervalId = setInterval(() => {
+        processAudio();
+        currentTimeRef.current.textContent = (parseFloat(currentTimeRef.current.textContent) + 0.1);
+        // setCurrentTime(currentTimeRef.current);
+        // setCurrentTime((prevTime) => (prevTime + 0.1));  --> bad, updates UI every 100 milliseconds
+      }, 100);
+    } else {
+      clearInterval(intervalId);
+    }
+      return () => clearInterval(intervalId);
+    }, [isPlaying]);
 
 
 
   const handlePlayClick = () => {
-    setIsPlaying(true); 
-    player.start(noteSequence);
-    sliderRef.current.max = noteSequence.totalTime.toFixed(1);
-    sliderRef.current.value = '0';
-    playStateRef.current.textContent = player.getPlayState();
-    setPlayButtonDisabled(true);
-    setStopButtonDisabled(false);
-    setPauseButtonDisabled(false);
-    setResumeButtonDisabled(true);
+    player.loadSamples(noteSequence).then(() => {
+      player.start(noteSequence);
+      setIsPlaying(true); 
+      sliderRef.current.max = noteSequence.totalTime.toFixed(1);
+      sliderRef.current.value = '0';
+      currentTimeRef.current.textContent = '0';
+      playStateRef.current.textContent = player.getPlayState();
+      setPlayButtonDisabled(true);
+      setStopButtonDisabled(false);
+      setPauseButtonDisabled(false);
+      setResumeButtonDisabled(true);
+    });
   }
 
   const handleStopClick = () => {
@@ -107,40 +152,71 @@ const AudioPlayer = () => {
     setResumeButtonDisabled(true);
   }
 
-  const handleSliderChange = () => {
-    const t = parseFloat(sliderRef.current.value);
-    currentTimeRef.current.textContent = t.toFixed(1);
-    const playing = (player.getPlayState() === 'started');
-    if (playing) {
-      player.pause();
-    }
-    player.seekTo(t);
-    if (playing) {
-      player.resume();
-    }
+  // const handleSliderChange = () => {
+  //   const t = parseFloat(sliderRef.current.value);
+  //   discreteCurrentTimeRef.current.textContent = t.toFixed(1);
+  //   const playing = (player.getPlayState() === 'started');
+  //   if (playing) {
+  //     player.pause();
+  //   }
+  //   player.seekTo(t);
+  //   if (playing) {
+  //     player.resume();
+  //   }
+  // }
+  
+  const floatsEqual = (a, b, epsilon = 0.0001) => {
+    return Math.abs(a - b) < epsilon;
   }
 
+
+  const handleSliderMouseUp = () => {
+    const t = parseFloat(sliderRef.current.value);
+    if ( !floatsEqual(t, 0) && !floatsEqual(t, noteSequence.totalTime.toFixed(1)) ){ 
+      currentTimeRef.current.textContent = t.toFixed(1);
+      discreteCurrentTimeRef.current.textContent = t.toFixed(1);
+      const playing = (player.getPlayState() === 'started');
+      if (playing) {
+        player.pause();
+      }
+      player.seekTo(t);
+      if (playing) {
+        player.resume();
+      }
+    } else {
+      // TODO: handle start and end of song
+
+    }
+    sliderDown.current = false;
+  }
+  //come back later to handle start and end of song
+  const handleMouseChange = () => {
+    const scrollValue = parseFloat(sliderRef.current.value);
+    sliderScrollValue.current = scrollValue < noteSequence.totalTime.toFixed(1) && scrollValue > 0 ? 
+                                sliderRef.current.value : currentTimeRef.current.textContent;
+  };
+
+
   function convertObjectsToString(objects) {
-    return objects[0].map(obj => JSON.stringify(obj)).join(", ");
+    return objects.map(obj => JSON.stringify(obj)).join(", ");
   }
   const writeNoteSeqs = (seqs, useSoundFontPlayer = false, writeVelocity = false) => {
-    return seqs.map(seq => {
-      const isQuantized = mm.sequences.isQuantizedSequence(seq);
-      return seq.notes.map(n => {
-          let note = {
-            pitch: n.pitch,
-            startTime: isQuantized ? n.quantizedStartStep : n.startTime.toPrecision(3)
-          };
-          if (n.quantizedEndStep || n.endTime) {
-            note.endTime = isQuantized ? n.quantizedEndStep : n.endTime.toPrecision(3);
-          }
-          if (n.velocity) {
-            note.velocity = n.velocity;
-          }
-          return note;
-        })
+    
+    const isQuantized = mm.sequences.isQuantizedSequence(seqs);
+    return seqs.notes.map(n => {
+        let note = {
+          pitch: n.pitch,
+          startTime: isQuantized ? n.quantizedStartStep : parseFloat(n.startTime.toPrecision(5))
+        };
+        if (n.quantizedEndStep || n.endTime) {
+          note.endTime = isQuantized ? n.quantizedEndStep : parseFloat(n.endTime.toPrecision(5));
+        }
+        if (n.velocity) {
+          note.velocity = n.velocity;
+        }
+        return note;
+      })
       
-    });
   }
 
 
@@ -153,12 +229,13 @@ const AudioPlayer = () => {
       <button id="resume" onClick={handleResumeClick} disabled={resumeButtonDisabled}>Resume</button>
       <div>
         <span id="playState" ref={playStateRef}></span>
-        <input id="slider" type="range" ref={sliderRef} min={0} disabled={stopButtonDisabled} onChange={handleSliderChange} />
-        <span id="currentTime" ref={currentTimeRef}>0</span>
+        <input id="slider" type="range" ref={sliderRef} min={0} disabled={stopButtonDisabled} 
+          onMouseDown={() =>{sliderDown.current = true;}} onMouseUp={handleSliderMouseUp} onChange={handleMouseChange} />
+        <span id="discreteCurrentTime" ref={discreteCurrentTimeRef}>0</span>
       </div>
-      <div>Current Time: {currentTime}</div>
+      <div>Current Time: <span ref={currentTimeRef}>0</span></div>
         <div>
-        <span> Notes: {noteSequence? convertObjectsToString(writeNoteSeqs([noteSequence])) : 0}</span>
+        <span> Notes: {noteSequence? convertObjectsToString(writeNoteSeqs(noteSequence)) : 'No notes loaded'}</span>
       </div>
     </div>
   );
