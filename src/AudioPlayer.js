@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import * as mm from '@magenta/music/esm/core.js';
 
 
-const AudioPlayer = () => {
+const AudioPlayer = (props) => {
   const [noteSequence, setNoteSequence] = useState(null);
   const [player, setPlayer] = useState(null);
   const playStateRef = useRef(null);
@@ -19,7 +19,6 @@ const AudioPlayer = () => {
   // const [currentTime, setCurrentTime] = useState(0);
   const sliderDown = useRef(false);
   const sliderScrollValue = useRef('0');
-  // console.log('render');
     
 
   const handleFileChange = async (event) => {
@@ -37,8 +36,8 @@ const AudioPlayer = () => {
           {
           run: (note) => {
             // console.log(`Pitch: ${note.pitch}, Velocity: ${note.velocity}, StartTime: ${note.startTime}, EndTime: ${note.endTime}`);
-            sliderRef.current.value = sliderDown.current ? sliderScrollValue.current : note.startTime.toFixed(1);
-            discreteCurrentTimeRef.current.textContent = note.startTime.toFixed(1);
+            sliderRef.current.value = sliderDown.current ? sliderScrollValue.current : note.startTime.toFixed(5);
+            discreteCurrentTimeRef.current.textContent = note.startTime.toFixed(5);
             // setCurrentTime(note.startTime);
           },
           stop: () => { 
@@ -71,7 +70,7 @@ const AudioPlayer = () => {
 
   const processAudio = () => {
     if (noteSequence && player) {
-        const currentTime = parseFloat(currentTimeRef.current.textContent);
+        const currentTime = parseFloat(discreteCurrentTimeRef.current.textContent);
         const currentNoteIndex = binarySearch(noteObjects, currentTime);
         const startIndex = Math.max(0, currentNoteIndex - 44);
         const endIndex = Math.min(noteObjects.length, currentNoteIndex + 44);
@@ -80,7 +79,8 @@ const AudioPlayer = () => {
                   buffer.filter(note => {
                   return currentTime >= parseFloat(note.startTime) && currentTime < parseFloat(note.endTime);
               });
-        console.log(currentNotes);
+        props.render(currentNotes.map( note => note.pitch));
+        // console.log(currentNotes);
         // console.log(currentTime);
         // console.log(currentTime, currentNotes, currentNoteObjectIndex);
         // console.log(buffer);
@@ -94,7 +94,7 @@ const AudioPlayer = () => {
     if (isPlaying) {
       intervalId = setInterval(() => {
         processAudio();
-        currentTimeRef.current.textContent = (parseFloat(currentTimeRef.current.textContent) + 0.1);
+        currentTimeRef.current.textContent = (parseFloat(currentTimeRef.current.textContent) + 0.1).toFixed(5);
         // setCurrentTime(currentTimeRef.current);
         // setCurrentTime((prevTime) => (prevTime + 0.1));  --> bad, updates UI every 100 milliseconds
       }, 100);
@@ -103,6 +103,13 @@ const AudioPlayer = () => {
     }
       return () => clearInterval(intervalId);
     }, [isPlaying]);
+
+    //make sure currentTimeRef is updated when props.width changes
+    useEffect(() => {
+      currentTimeRef.current.textContent = parseFloat(
+                    discreteCurrentTimeRef.current.textContent);
+
+    }, [props.width]);
 
 
 
@@ -152,18 +159,7 @@ const AudioPlayer = () => {
     setResumeButtonDisabled(true);
   }
 
-  // const handleSliderChange = () => {
-  //   const t = parseFloat(sliderRef.current.value);
-  //   discreteCurrentTimeRef.current.textContent = t.toFixed(1);
-  //   const playing = (player.getPlayState() === 'started');
-  //   if (playing) {
-  //     player.pause();
-  //   }
-  //   player.seekTo(t);
-  //   if (playing) {
-  //     player.resume();
-  //   }
-  // }
+
   
   const floatsEqual = (a, b, epsilon = 0.0001) => {
     return Math.abs(a - b) < epsilon;
@@ -172,9 +168,9 @@ const AudioPlayer = () => {
 
   const handleSliderMouseUp = () => {
     const t = parseFloat(sliderRef.current.value);
-    if ( !floatsEqual(t, 0) && !floatsEqual(t, noteSequence.totalTime.toFixed(1)) ){ 
-      currentTimeRef.current.textContent = t.toFixed(1);
-      discreteCurrentTimeRef.current.textContent = t.toFixed(1);
+    if ( !floatsEqual(t, 0) && !floatsEqual(t, noteSequence.totalTime.toFixed(5)) ){ 
+      currentTimeRef.current.textContent = t.toFixed(5);
+      discreteCurrentTimeRef.current.textContent = t.toFixed(5);
       const playing = (player.getPlayState() === 'started');
       if (playing) {
         player.pause();
@@ -192,7 +188,7 @@ const AudioPlayer = () => {
   //come back later to handle start and end of song
   const handleMouseChange = () => {
     const scrollValue = parseFloat(sliderRef.current.value);
-    sliderScrollValue.current = scrollValue < noteSequence.totalTime.toFixed(1) && scrollValue > 0 ? 
+    sliderScrollValue.current = scrollValue < noteSequence.totalTime.toFixed(5) && scrollValue > 0 ? 
                                 sliderRef.current.value : currentTimeRef.current.textContent;
   };
 
@@ -206,10 +202,10 @@ const AudioPlayer = () => {
     return seqs.notes.map(n => {
         let note = {
           pitch: n.pitch,
-          startTime: isQuantized ? n.quantizedStartStep : parseFloat(n.startTime.toPrecision(5))
+          startTime: isQuantized ? n.quantizedStartStep : parseFloat(n.startTime.toFixed(5))
         };
         if (n.quantizedEndStep || n.endTime) {
-          note.endTime = isQuantized ? n.quantizedEndStep : parseFloat(n.endTime.toPrecision(5));
+          note.endTime = isQuantized ? n.quantizedEndStep : parseFloat(n.endTime.toFixed(5));
         }
         if (n.velocity) {
           note.velocity = n.velocity;
@@ -231,9 +227,9 @@ const AudioPlayer = () => {
         <span id="playState" ref={playStateRef}></span>
         <input id="slider" type="range" ref={sliderRef} min={0} disabled={stopButtonDisabled} 
           onMouseDown={() =>{sliderDown.current = true;}} onMouseUp={handleSliderMouseUp} onChange={handleMouseChange} />
-        <span id="discreteCurrentTime" ref={discreteCurrentTimeRef}>0</span>
       </div>
       <div>Current Time: <span ref={currentTimeRef}>0</span></div>
+      <div>Discrete Current Time: <span id="discreteCurrentTime" ref={discreteCurrentTimeRef}>0</span> </div>
         <div>
         <span> Notes: {noteSequence? convertObjectsToString(writeNoteSeqs(noteSequence)) : 'No notes loaded'}</span>
       </div>
