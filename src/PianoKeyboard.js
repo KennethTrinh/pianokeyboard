@@ -20,9 +20,9 @@ function PianoKeyboard() {
   const [currentNotes, setCurrentNotes] = useState([]);
   const { height, width } = useWindowDimensions();
   const [audioUnlocked, setAudioUnlocked] = useState(false);
-  const handleButtonClick = () => {
+  const handleButtonClick = async () => {
+    await Tone.start();
     setAudioUnlocked(true);
-    Tone.start();
   }
 
   return (  
@@ -37,7 +37,8 @@ function PianoKeyboard() {
     </header>
     </div>
     <canvas id="visualizationCanvas" width={width} height="300" />
-      {audioUnlocked ? ( <div>
+      {audioUnlocked ? ( <div >
+        <div id="myPiano">
         <Piano
             noteRange={{ first: firstNote, last: lastNote }}
             playNote={(midiNumber) => { }}
@@ -47,11 +48,11 @@ function PianoKeyboard() {
             keyWidthToHeight={0.2}
             // keyboardShortcuts={keyboardShortcuts}
         /> 
-        <AudioPlayer render={( currentNotes ) => { setCurrentNotes(currentNotes) }} width={width} />
+        </div>
+        <AudioPlayer render={( currentNotes ) => { setCurrentNotes(currentNotes) }} width={width}/>
 
-
-
-        </div>): <div width="1280" height="300" style={{textAlign: 'center', fontSize: '50px'}}> Click to Unlock Audio </div> } 
+        </div>): <div width="1280" height="300" style={{textAlign: 'center', fontSize: '50px'}}> Click to begin! </div> 
+        } 
     </div>
   );
 }

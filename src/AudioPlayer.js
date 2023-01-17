@@ -79,12 +79,46 @@ const AudioPlayer = (props) => {
                   buffer.filter(note => {
                   return currentTime >= parseFloat(note.startTime) && currentTime < parseFloat(note.endTime);
               });
-        props.render(currentNotes.map( note => note.pitch));
+        drawCanvas(currentNotes);
+        props.render(currentNotes.map( note => note.pitch)); //calls setCurrentNotes in PianoKeyboard.js
         // console.log(currentNotes);
         // console.log(currentTime);
         // console.log(currentTime, currentNotes, currentNoteObjectIndex);
         // console.log(buffer);
         
+    }
+  }
+  function drawCanvas(currentNotes) {
+    const canvas = document.getElementById("visualizationCanvas");
+    const ctx = canvas.getContext("2d");
+    const currentTime = parseFloat(currentTimeRef.current.textContent);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#3ac8da";
+    currentNotes.forEach(note => {
+        const { start, end } = findKeyPosition(note.pitch);
+        // ctx.fillRect(start, 0, end - start, 100);
+        if (note.endTime >= currentTime && currentTime >= note.startTime) {
+          const height = (note.endTime - currentTime) / (note.endTime - note.startTime) * canvas.height;
+          ctx.fillRect(start, canvas.height - height, end - start, height);
+        }
+    });
+}
+
+
+  const findKeyPosition = (midiNumber) => {
+    const keyboard = document.getElementsByClassName("ReactPiano__Keyboard")[0];
+    const keyboardWidth = keyboard.offsetWidth;
+    const keys = keyboard.children;
+    let count = 21;
+    for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        if (count === midiNumber) {
+            return {
+                start: parseFloat(key.style.left) * keyboardWidth / 100,
+                end: (parseFloat(key.style.left) + parseFloat(key.style.width)) * keyboardWidth / 100
+            };
+        }
+        count++;
     }
   }
 
@@ -94,7 +128,10 @@ const AudioPlayer = (props) => {
     if (isPlaying) {
       intervalId = setInterval(() => {
         processAudio();
-        currentTimeRef.current.textContent = (parseFloat(currentTimeRef.current.textContent) + 0.1).toFixed(5);
+        currentTimeRef.current.textContent = Math.max(      //discrete time is the lower bound
+          (parseFloat(currentTimeRef.current.textContent) + 0.1),
+          (parseFloat(discreteCurrentTimeRef.current.textContent + 0.1))
+        ).toFixed(5);
         // setCurrentTime(currentTimeRef.current);
         // setCurrentTime((prevTime) => (prevTime + 0.1));  --> bad, updates UI every 100 milliseconds
       }, 100);
@@ -232,7 +269,7 @@ const AudioPlayer = (props) => {
       <div>Discrete Current Time: <span id="discreteCurrentTime" ref={discreteCurrentTimeRef}>0</span> </div>
         <div>
         <span> Notes: {noteSequence? convertObjectsToString(writeNoteSeqs(noteSequence)) : 'No notes loaded'}</span>
-      </div>
+      </div>    
     </div>
   );
 }
