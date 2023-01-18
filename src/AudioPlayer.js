@@ -79,7 +79,7 @@ const AudioPlayer = (props) => {
                   buffer.filter(note => {
                   return currentTime >= parseFloat(note.startTime) && currentTime < parseFloat(note.endTime);
               });
-        drawCanvas(currentNotes);
+        drawCanvas(buffer);
         props.render(currentNotes.map( note => note.pitch)); //calls setCurrentNotes in PianoKeyboard.js
         // console.log(currentNotes);
         // console.log(currentTime);
@@ -88,7 +88,7 @@ const AudioPlayer = (props) => {
         
     }
   }
-  function drawCanvas(currentNotes) {
+  const drawCanvas = (currentNotes) => {
     const canvas = document.getElementById("visualizationCanvas");
     const ctx = canvas.getContext("2d");
     const currentTime = parseFloat(currentTimeRef.current.textContent);
@@ -96,13 +96,13 @@ const AudioPlayer = (props) => {
     ctx.fillStyle = "#3ac8da";
     currentNotes.forEach(note => {
         const { start, end } = findKeyPosition(note.pitch);
-        // ctx.fillRect(start, 0, end - start, 100);
-        if (note.endTime >= currentTime && currentTime >= note.startTime) {
-          const height = (note.endTime - currentTime) / (note.endTime - note.startTime) * canvas.height;
-          ctx.fillRect(start, canvas.height - height, end - start, height);
+        const startY = canvas.height - (note.startTime - currentTime) / (5) * canvas.height;
+        const endY = canvas.height - (note.endTime - currentTime) / (5) * canvas.height;
+        if (note.startTime <= currentTime + 5) {
+            ctx.fillRect(start, startY, end - start, endY - startY);
         }
     });
-}
+  }
 
 
   const findKeyPosition = (midiNumber) => {
