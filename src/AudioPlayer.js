@@ -9,7 +9,7 @@ const AudioPlayer = (props) => {
   const sliderRef = useRef(null);
   const discreteCurrentTimeRef = useRef(null);
   const currentTimeRef = useRef({current: {textContent: '0'} });
-  const [playButtonDisabled, setPlayButtonDisabled] = useState(false);
+  const [playButtonDisabled, setPlayButtonDisabled] = useState(true);
   const [stopButtonDisabled, setStopButtonDisabled] = useState(true);
   const [pauseButtonDisabled, setPauseButtonDisabled] = useState(true);
   const [resumeButtonDisabled, setResumeButtonDisabled] = useState(true);
@@ -19,9 +19,24 @@ const AudioPlayer = (props) => {
   // const [currentTime, setCurrentTime] = useState(0);
   const sliderDown = useRef(false);
   const sliderScrollValue = useRef('0');
+  const [didSeekBack, setDidSeekBack] = useState(2);
+  const RETRIES = 3
     
 
   const handleFileChange = async (event) => {
+    if (noteSequence) {
+      setIsPlaying(false);
+      player.stop();
+      playStateRef.current.textContent = player.getPlayState();
+      setPlayButtonDisabled(true);
+      setStopButtonDisabled(true);
+      setPauseButtonDisabled(true);
+      setResumeButtonDisabled(true);
+      sliderRef.current.value = '0';
+      currentTimeRef.current.textContent = '0';
+      discreteCurrentTimeRef.current.textContent = '0';
+      clearInterval(intervalId);
+    }
     const file = event.target.files[0];
     const fileUrl = URL.createObjectURL(file);
     const ns = await mm.urlToNoteSequence(fileUrl);
@@ -48,7 +63,7 @@ const AudioPlayer = (props) => {
             setResumeButtonDisabled(true);
             } 
         }))
-
+      setPlayButtonDisabled(false);
     }
   }, [noteSequence]);
 
@@ -72,8 +87,8 @@ const AudioPlayer = (props) => {
     if (noteSequence && player) {
         const currentTime = parseFloat(discreteCurrentTimeRef.current.textContent);
         const currentNoteIndex = binarySearch(noteObjects, currentTime);
-        const startIndex = Math.max(0, currentNoteIndex - 44);
-        const endIndex = Math.min(noteObjects.length, currentNoteIndex + 44);
+        const startIndex = Math.max(0, currentNoteIndex - 100);
+        const endIndex = Math.min(noteObjects.length, currentNoteIndex + 100);
         const buffer = noteObjects.slice(startIndex, endIndex);
         const currentNotes = currentNoteIndex === -1 ? [] :  
                   buffer.filter(note => {
@@ -88,18 +103,18 @@ const AudioPlayer = (props) => {
         
     }
   }
-  const drawCanvas = (currentNotes) => {
+  const drawCanvas = (notes) => {
     const canvas = document.getElementById("visualizationCanvas");
     const ctx = canvas.getContext("2d");
     const currentTime = parseFloat(currentTimeRef.current.textContent);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#3ac8da";
-    currentNotes.forEach(note => {
-        const { start, end } = findKeyPosition(note.pitch);
+    notes.forEach(note => {
+        const { startWidth, endWidth } = findKeyPosition(note.pitch);
         const startY = canvas.height - (note.startTime - currentTime) / (5) * canvas.height;
         const endY = canvas.height - (note.endTime - currentTime) / (5) * canvas.height;
         if (note.startTime <= currentTime + 5) {
-            ctx.fillRect(start, startY, end - start, endY - startY);
+            ctx.fillRect(startWidth, startY, endWidth - startWidth, endY - startY);
         }
     });
   }
@@ -108,14 +123,14 @@ const AudioPlayer = (props) => {
   const findKeyPosition = (midiNumber) => {
     const keyboard = document.getElementsByClassName("ReactPiano__Keyboard")[0];
     const keyboardWidth = keyboard.offsetWidth;
-    const keys = keyboard.children;
+    const keys = keyboard.children; 
     let count = 21;
     for (let i = 0; i < keys.length; i++) {
         const key = keys[i];
         if (count === midiNumber) {
             return {
-                start: parseFloat(key.style.left) * keyboardWidth / 100,
-                end: (parseFloat(key.style.left) + parseFloat(key.style.width)) * keyboardWidth / 100
+                startWidth: parseFloat(key.style.left) * keyboardWidth / 100,
+                endWidth: (parseFloat(key.style.left) + parseFloat(key.style.width)) * keyboardWidth / 100
             };
         }
         count++;
@@ -128,10 +143,19 @@ const AudioPlayer = (props) => {
     if (isPlaying) {
       intervalId = setInterval(() => {
         processAudio();
-        currentTimeRef.current.textContent = Math.max(      //discrete time is the lower bound
-          (parseFloat(currentTimeRef.current.textContent) + 0.1),
-          (parseFloat(discreteCurrentTimeRef.current.textContent + 0.1))
-        ).toFixed(5);
+        const currentTime = parseFloat(currentTimeRef.current.textContent);
+        const discreteTime = parseFloat(discreteCurrentTimeRef.current.textContent);
+        // initially, I tried:  Math.abs( currentTime - discreteTime ) > 5)
+        // but it appears we have to retry twice to correctly set currentTimeRef
+        if (didSeekBack < RETRIES)  {   
+          currentTimeRef.current.textContent = (discreteTime + 0.1).toFixed(5);
+          setDidSeekBack( (prev) =>  (prev < RETRIES) ? (prev + 1) % (RETRIES + 1): prev );
+        } else { 
+          currentTimeRef.current.textContent = Math.max(      //discrete time is the lower bound
+            (currentTime + 0.1),
+            (discreteTime + 0.1)
+          ).toFixed(5);
+        }
         // setCurrentTime(currentTimeRef.current);
         // setCurrentTime((prevTime) => (prevTime + 0.1));  --> bad, updates UI every 100 milliseconds
       }, 100);
@@ -139,7 +163,7 @@ const AudioPlayer = (props) => {
       clearInterval(intervalId);
     }
       return () => clearInterval(intervalId);
-    }, [isPlaying]);
+    }, [isPlaying, didSeekBack]);
 
     //make sure currentTimeRef is updated when props.width changes
     useEffect(() => {
@@ -157,7 +181,7 @@ const AudioPlayer = (props) => {
       sliderRef.current.max = noteSequence.totalTime.toFixed(1);
       sliderRef.current.value = '0';
       currentTimeRef.current.textContent = '0';
-      playStateRef.current.textContent = player.getPlayState();
+      playStateRef.current.textContent = 'playing';
       setPlayButtonDisabled(true);
       setStopButtonDisabled(false);
       setPauseButtonDisabled(false);
@@ -205,9 +229,17 @@ const AudioPlayer = (props) => {
 
   const handleSliderMouseUp = () => {
     const t = parseFloat(sliderRef.current.value);
-    if ( !floatsEqual(t, 0) && !floatsEqual(t, noteSequence.totalTime.toFixed(5)) ){ 
-      currentTimeRef.current.textContent = t.toFixed(5);
+
+    if (t < parseFloat(discreteCurrentTimeRef.current.textContent)) {
       discreteCurrentTimeRef.current.textContent = t.toFixed(5);
+      currentTimeRef.current.textContent = t.toFixed(5);
+      setDidSeekBack(0);
+    } else{
+      discreteCurrentTimeRef.current.textContent = t.toFixed(5);
+      currentTimeRef.current.textContent = t.toFixed(5);
+    }
+
+    if ( !floatsEqual(t, 0) && !floatsEqual(t, noteSequence.totalTime.toFixed(5)) ){ 
       const playing = (player.getPlayState() === 'started');
       if (playing) {
         player.pause();
@@ -221,6 +253,7 @@ const AudioPlayer = (props) => {
 
     }
     sliderDown.current = false;
+    processAudio();
   }
   //come back later to handle start and end of song
   const handleMouseChange = () => {
