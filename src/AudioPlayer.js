@@ -15,13 +15,14 @@ const AudioPlayer = (props) => {
   const [resumeButtonDisabled, setResumeButtonDisabled] = useState(true);
   const [noteObjects, setNoteObjects] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
-  let intervalId = null;
-  // const [currentTime, setCurrentTime] = useState(0);
   const sliderDown = useRef(false);
   const sliderScrollValue = useRef('0');
-  const [didSeekBack, setDidSeekBack] = useState(2);
-  const RETRIES = 3
-    
+  const RETRIES = 8;
+  const [didSeekBack, setDidSeekBack] = useState(RETRIES);
+  const DURATION_WINDOW = 3
+  let animationId = null;
+  let lastTimestamp = null;
+  let milliseconds_increment = null;
 
   const handleFileChange = async (event) => {
     if (noteSequence) {
@@ -34,8 +35,11 @@ const AudioPlayer = (props) => {
       setResumeButtonDisabled(true);
       sliderRef.current.value = '0';
       currentTimeRef.current.textContent = '0';
-      discreteCurrentTimeRef.current.textContent = '0';
-      clearInterval(intervalId);
+      cancelAnimationFrame(animationId);
+      lastTimestamp = null;
+      await setTimeout( () => {
+        discreteCurrentTimeRef.current.textContent = '0';
+      }, 100);
     }
     const file = event.target.files[0];
     const fileUrl = URL.createObjectURL(file);
@@ -53,7 +57,6 @@ const AudioPlayer = (props) => {
             // console.log(`Pitch: ${note.pitch}, Velocity: ${note.velocity}, StartTime: ${note.startTime}, EndTime: ${note.endTime}`);
             sliderRef.current.value = sliderDown.current ? sliderScrollValue.current : note.startTime.toFixed(5);
             discreteCurrentTimeRef.current.textContent = note.startTime.toFixed(5);
-            // setCurrentTime(note.startTime);
           },
           stop: () => { 
             setIsPlaying(false);
@@ -61,6 +64,12 @@ const AudioPlayer = (props) => {
             setStopButtonDisabled(true);
             setPauseButtonDisabled(true);
             setResumeButtonDisabled(true);
+            cancelAnimationFrame(animationId);
+            lastTimestamp = null;
+            setTimeout( () => {
+              discreteCurrentTimeRef.current.textContent = '0';
+              currentTimeRef.current.textContent = '0';
+              }, 100)
             } 
         }))
       setPlayButtonDisabled(false);
@@ -87,8 +96,8 @@ const AudioPlayer = (props) => {
     if (noteSequence && player) {
         const currentTime = parseFloat(discreteCurrentTimeRef.current.textContent);
         const currentNoteIndex = binarySearch(noteObjects, currentTime);
-        const startIndex = Math.max(0, currentNoteIndex - 100);
-        const endIndex = Math.min(noteObjects.length, currentNoteIndex + 100);
+        const startIndex = Math.max(0, currentNoteIndex - 10); // most people have 10 fingers
+        const endIndex = Math.min(noteObjects.length, currentNoteIndex + 90);
         const buffer = noteObjects.slice(startIndex, endIndex);
         const currentNotes = currentNoteIndex === -1 ? [] :  
                   buffer.filter(note => {
@@ -99,7 +108,6 @@ const AudioPlayer = (props) => {
         // console.log(currentNotes);
         // console.log(currentTime);
         // console.log(currentTime, currentNotes, currentNoteObjectIndex);
-        // console.log(buffer);
         
     }
   }
@@ -111,9 +119,9 @@ const AudioPlayer = (props) => {
     ctx.fillStyle = "#3ac8da";
     notes.forEach(note => {
         const { startWidth, endWidth } = findKeyPosition(note.pitch);
-        const startY = canvas.height - (note.startTime - currentTime) / (5) * canvas.height;
-        const endY = canvas.height - (note.endTime - currentTime) / (5) * canvas.height;
-        if (note.startTime <= currentTime + 5) {
+        const startY = canvas.height - (note.startTime - currentTime) / (DURATION_WINDOW) * canvas.height;
+        const endY = canvas.height - (note.endTime - currentTime) / (DURATION_WINDOW) * canvas.height;
+        if (note.startTime <= currentTime + DURATION_WINDOW) {
             ctx.fillRect(startWidth, startY, endWidth - startWidth, endY - startY);
         }
     });
@@ -139,31 +147,41 @@ const AudioPlayer = (props) => {
 
 
 
+  const computeCurrentTime = (timestamp) => {
+      if (lastTimestamp)  {
+          milliseconds_increment = (timestamp - lastTimestamp) / 1000;
+          processAudio();
+          const currentTime = parseFloat(currentTimeRef.current.textContent);
+          const discreteTime = parseFloat(discreteCurrentTimeRef.current.textContent);
+          // initially, I tried:  Math.abs( currentTime - discreteTime ) > 5)
+          // but discreteCurrentTimeRef.current.textContent = note.startTime.toFixed(5); has a latency period after the seek
+          if (didSeekBack < RETRIES)  {   
+            currentTimeRef.current.textContent = (discreteTime + milliseconds_increment).toFixed(5);
+            setDidSeekBack( (prev) =>  (prev < RETRIES) ? (prev + 1) % (RETRIES + 1): prev );
+          } else { 
+            currentTimeRef.current.textContent = Math.max(      //discrete time is the lower bound
+              (currentTime + milliseconds_increment),
+              (discreteTime + milliseconds_increment)
+            ).toFixed(5);
+          }
+      }
+        
+      lastTimestamp = timestamp;
+      animationId = requestAnimationFrame(computeCurrentTime);
+  }
+
   useEffect(() => {
-    if (isPlaying) {
-      intervalId = setInterval(() => {
-        processAudio();
-        const currentTime = parseFloat(currentTimeRef.current.textContent);
-        const discreteTime = parseFloat(discreteCurrentTimeRef.current.textContent);
-        // initially, I tried:  Math.abs( currentTime - discreteTime ) > 5)
-        // but it appears we have to retry twice to correctly set currentTimeRef
-        if (didSeekBack < RETRIES)  {   
-          currentTimeRef.current.textContent = (discreteTime + 0.1).toFixed(5);
-          setDidSeekBack( (prev) =>  (prev < RETRIES) ? (prev + 1) % (RETRIES + 1): prev );
-        } else { 
-          currentTimeRef.current.textContent = Math.max(      //discrete time is the lower bound
-            (currentTime + 0.1),
-            (discreteTime + 0.1)
-          ).toFixed(5);
-        }
-        // setCurrentTime(currentTimeRef.current);
-        // setCurrentTime((prevTime) => (prevTime + 0.1));  --> bad, updates UI every 100 milliseconds
-      }, 100);
-    } else {
-      clearInterval(intervalId);
-    }
-      return () => clearInterval(intervalId);
-    }, [isPlaying, didSeekBack]);
+      if (isPlaying) {
+          animationId = requestAnimationFrame(computeCurrentTime);
+      } else {
+          cancelAnimationFrame(animationId);
+          lastTimestamp = null;
+      }
+      return () => {
+          cancelAnimationFrame(animationId);
+          lastTimestamp = null;
+      }
+  }, [isPlaying, didSeekBack]);
 
     //make sure currentTimeRef is updated when props.width changes
     useEffect(() => {
@@ -181,7 +199,7 @@ const AudioPlayer = (props) => {
       sliderRef.current.max = noteSequence.totalTime.toFixed(1);
       sliderRef.current.value = '0';
       currentTimeRef.current.textContent = '0';
-      playStateRef.current.textContent = 'playing';
+      playStateRef.current.textContent = 'started';
       setPlayButtonDisabled(true);
       setStopButtonDisabled(false);
       setPauseButtonDisabled(false);
@@ -201,7 +219,6 @@ const AudioPlayer = (props) => {
 
   const handlePauseClick = () => {
     setIsPlaying(false);
-    clearInterval();
     player.pause();
     playStateRef.current.textContent = player.getPlayState();
     setPlayButtonDisabled(true);
