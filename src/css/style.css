@@ -69,4 +69,16 @@ canvas {
   .PianoDarkTheme .ReactPiano__Key--active.ReactPiano__Key--natural {
     background: #0396ca;
   }
+
+  
+  .song-item {
+    padding: 5px;
+    cursor: pointer;
+    color: black;
+    transition: color 0.2s ease-in;
+  }
+  
+  .song-item:hover {
+    color: blue;
+  }
   

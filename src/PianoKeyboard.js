@@ -3,6 +3,7 @@ import './css/style.css';
 import logo from './logo.svg';
 import AudioPlayer from './AudioPlayer';
 import { Piano, KeyboardShortcuts, MidiNumbers } from 'react-piano';
+import Playlist from './Playlist';
 import 'react-piano/dist/styles.css';
 import { useState } from 'react';
 import useWindowDimensions from './useWindowDimensions';
@@ -12,14 +13,13 @@ import * as Tone from 'tone';
 function PianoKeyboard() {
   const firstNote = MidiNumbers.fromNote('a0');
   const lastNote = MidiNumbers.fromNote('c8');
-//   const keyboardShortcuts = KeyboardShortcuts.create({
-//     firstNote: firstNote,
-//     lastNote: lastNote,
-//     keyboardConfig: KeyboardShortcuts.HOME_ROW,
-//   });
+
   const [currentNotes, setCurrentNotes] = useState([]);
   const { height, width } = useWindowDimensions();
   const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const [currentSong, setCurrentSong] = useState('');
+  const [currentSongURL, setCurrentSongURL] = useState('');
+
   const handleButtonClick = async () => {
     await Tone.start();
     setAudioUnlocked(true);
@@ -46,11 +46,10 @@ function PianoKeyboard() {
             activeNotes={currentNotes}
             width={width}
             keyWidthToHeight={0.2}
-            // keyboardShortcuts={keyboardShortcuts}
         /> 
         </div>
-        <AudioPlayer render={( currentNotes ) => { setCurrentNotes(currentNotes) }} width={width}/>
-
+        <AudioPlayer render={( currentNotes ) => { setCurrentNotes(currentNotes) }} width={width} {...{currentSong, setCurrentSong, currentSongURL, setCurrentSongURL}} />
+        <Playlist {...{currentSong, setCurrentSong, currentSongURL, setCurrentSongURL}} />
         </div>): <div width="1280" height="300" style={{textAlign: 'center', fontSize: '50px'}}> Click to begin! </div> 
         } 
     </div>

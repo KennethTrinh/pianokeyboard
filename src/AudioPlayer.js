@@ -24,7 +24,32 @@ const AudioPlayer = (props) => {
   let lastTimestamp = null;
   let milliseconds_increment = null;
 
-  const handleFileChange = async (event) => {
+  // const handleFileChange = async (event) => {
+  //   if (noteSequence) {
+  //     setIsPlaying(false);
+  //     player.stop();
+  //     playStateRef.current.textContent = player.getPlayState();
+  //     setPlayButtonDisabled(true);
+  //     setStopButtonDisabled(true);
+  //     setPauseButtonDisabled(true);
+  //     setResumeButtonDisabled(true);
+  //     sliderRef.current.value = '0';
+  //     currentTimeRef.current.textContent = '0';
+  //     cancelAnimationFrame(animationId);
+  //     lastTimestamp = null;
+  //     await setTimeout( () => {
+  //       discreteCurrentTimeRef.current.textContent = '0';
+  //     }, 100);
+  //   }
+  //   const file = event.target.files[0];
+  //   const fileUrl = URL.createObjectURL(file);
+  //   console.log(fileUrl);
+  //   const ns = await mm.urlToNoteSequence(fileUrl);
+  //   setNoteSequence(ns);
+  // }
+
+  useEffect( () => {
+    async function loadNoteSequence() {
     if (noteSequence) {
       setIsPlaying(false);
       player.stop();
@@ -41,11 +66,13 @@ const AudioPlayer = (props) => {
         discreteCurrentTimeRef.current.textContent = '0';
       }, 100);
     }
-    const file = event.target.files[0];
-    const fileUrl = URL.createObjectURL(file);
-    const ns = await mm.urlToNoteSequence(fileUrl);
-    setNoteSequence(ns);
+    if (props.currentSongURL) {
+      const ns = await mm.urlToNoteSequence(props.currentSongURL);
+      setNoteSequence(ns);
+    }
   }
+  loadNoteSequence();
+  }, [props.currentSongURL]);
 
 
   useEffect(() => {
@@ -96,8 +123,8 @@ const AudioPlayer = (props) => {
     if (noteSequence && player) {
         const currentTime = parseFloat(discreteCurrentTimeRef.current.textContent);
         const currentNoteIndex = binarySearch(noteObjects, currentTime);
-        const startIndex = Math.max(0, currentNoteIndex - 10); // most people have 10 fingers
-        const endIndex = Math.min(noteObjects.length, currentNoteIndex + 90);
+        const startIndex = Math.max(0, currentNoteIndex - 100); 
+        const endIndex = Math.min(noteObjects.length, currentNoteIndex + 100);
         const buffer = noteObjects.slice(startIndex, endIndex);
         const currentNotes = currentNoteIndex === -1 ? [] :  
                   buffer.filter(note => {
@@ -305,7 +332,7 @@ const AudioPlayer = (props) => {
 
   return (
     <div>
-      <input type="file" accept=".mid" onChange={handleFileChange} />
+      {/* <input type="file" accept=".mid" onChange={handleFileChange} /> */}
       <button id="play" onClick={handlePlayClick} disabled={playButtonDisabled}>Play</button>
       <button id="stop" onClick={handleStopClick} disabled={stopButtonDisabled}>Stop</button>
       <button id="pause" onClick={handlePauseClick} disabled={pauseButtonDisabled}>Pause</button>
@@ -318,7 +345,7 @@ const AudioPlayer = (props) => {
       <div>Current Time: <span ref={currentTimeRef}>0</span></div>
       <div>Discrete Current Time: <span id="discreteCurrentTime" ref={discreteCurrentTimeRef}>0</span> </div>
         <div>
-        <span> Notes: {noteSequence? convertObjectsToString(writeNoteSeqs(noteSequence)) : 'No notes loaded'}</span>
+        {/* <span> Notes: {noteSequence? convertObjectsToString(writeNoteSeqs(noteSequence)) : 'No notes loaded'}</span> */}
       </div>    
     </div>
   );
