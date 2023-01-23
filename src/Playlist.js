@@ -12,7 +12,7 @@ const Playlist = (props) => {
         const promises = [Etude, MiaSebastian].map(async (song) => {
             const response = await fetch(song);
             const blob = await response.blob();
-            return URL.createObjectURL(blob);
+            return blob;//URL.createObjectURL(blob);
         });
         const urls = await Promise.all(promises);
         const initialPlaylist = [        
@@ -29,7 +29,7 @@ const Playlist = (props) => {
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    const fileUrl = URL.createObjectURL(file);
+    const fileUrl = file;//URL.createObjectURL(file);
     const newSong = { name: file.name, url: fileUrl };
     setPlaylist([...playlist, newSong]);
   };
