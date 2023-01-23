@@ -36,6 +36,7 @@ class Player {
 		this.soundfontName = getSetting("soundfontName")
 		this.inputInstrument = "acoustic_grand_piano"
 		this.lastMicNote = -1
+		this.pitch = 0
 
 		this.newSongCallbacks = []
 		this.inputActiveNotes = {}
@@ -412,6 +413,7 @@ class Player {
 			return
 		}
 		let currentTime = this.getTime()
+		note = {...note, noteNumber: note.noteNumber + this.pitch}
 
 		if (getMidiHandler().isOutputActive()) {
 			getMidiHandler().playNote(
