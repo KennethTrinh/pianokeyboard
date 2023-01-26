@@ -1,5 +1,4 @@
 import { hasBuffer, setBuffer } from "./audio/Buffers.js"
-import { getLoader } from "./ui/Loader.js"
 import { replaceAllString, iOS } from "./Util.js"
 export class SoundfontLoader {
 	/**
@@ -18,9 +17,6 @@ export class SoundfontLoader {
 		)
 			.then(response => {
 				if (response.ok) {
-					getLoader().setLoadMessage(
-						"Loaded " + instrument + " from " + soundfontName + " soundfont."
-					)
 					return response.text()
 				}
 				throw Error(response.statusText)

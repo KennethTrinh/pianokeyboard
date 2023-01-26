@@ -23,7 +23,6 @@ export class Song {
 		this.idCounter = 0
 
 		this.processEvents(midiData)
-		console.log(this)
 	}
 	getStart() {
 		return this.getNoteSequence()[0].timestamp

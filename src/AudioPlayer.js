@@ -12,7 +12,7 @@ const AudioPlayer = (props) => {
   let animationId = null;
 
   const [sliderValue, setSliderValue] = useState(0);
-  const pitch = useRef(0);
+  const [pitchValue, setPitchValue] = useState(0);
 
 
   useEffect( () => {
@@ -76,7 +76,7 @@ const AudioPlayer = (props) => {
                   return currentTime >= note.startTime && currentTime < note.endTime;
               });
         drawCanvas(buffer);
-        props.render(currentNotes.map( note => note.pitch + pitch.current)); //calls setCurrentNotes in PianoKeyboard.js
+        props.render(currentNotes.map( note => note.pitch + pitchValue)); //calls setCurrentNotes in PianoKeyboard.js
         
     }
   }
@@ -86,7 +86,7 @@ const AudioPlayer = (props) => {
     const currentTime = getPlayer().getTime();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#3ac8da";
-    notes = notes.filter(note => note.pitch + pitch.current >= 21 && note.pitch + pitch.current <= 108);
+    notes = notes.filter(note => note.pitch + pitchValue >= 21 && note.pitch + pitchValue <= 108);
     notes.forEach(note => {
         const { startWidth, endWidth } = findKeyPosition(note.pitch);
         const startY = canvas.height - (note.startTime - currentTime) / (DURATION_WINDOW) * canvas.height;
@@ -105,7 +105,7 @@ const AudioPlayer = (props) => {
     let count = 21;
     for (let i = 0; i < keys.length; i++) {
         const key = keys[i];
-        if (count === midiNumber + pitch.current) {
+        if (count === midiNumber + pitchValue) {
             return {
                 startWidth: parseFloat(key.style.left) * keyboardWidth / 100,
                 endWidth: (parseFloat(key.style.left) + parseFloat(key.style.width)) * keyboardWidth / 100
@@ -141,7 +141,7 @@ const AudioPlayer = (props) => {
       return () => {
           cancelAnimationFrame(animationId);
       }
-  }, [isPlaying]);
+  }, [isPlaying, pitchValue]);
 
 
 
@@ -191,8 +191,9 @@ const AudioPlayer = (props) => {
   }
 
   const handleChange = (event) => {
-    pitch.current =  parseInt(event.target.value) ;
+    setPitchValue(parseInt(event.target.value));
     getPlayer().pitch = parseInt(event.target.value) ;
+    processAudio();
   }
   
   function convertObjectsToString(objects) {
@@ -224,10 +225,10 @@ const AudioPlayer = (props) => {
         type="range"
         min={-12}
         max={12}
-        value={pitch.current}
+        value={pitchValue}
         onChange={handleChange}
       />
-        <span>{pitch.current}</span>
+        <span>{pitchValue}</span>
   </div>
 
         <div>

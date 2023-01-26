@@ -1,6 +1,5 @@
 import { getSetting } from "../settings/Settings.js"
 import { SoundfontLoader } from "../SoundfontLoader.js"
-import { getLoader } from "../ui/Loader.js"
 import {
 	createContinuousAudioNote,
 	createCompleteAudioNote
@@ -96,9 +95,7 @@ export class AudioPlayer {
 
 	async switchSoundfont(soundfontName, currentSong) {
 		this.soundfontName = soundfontName
-		getLoader().setLoadMessage("Loading Instruments")
 		await this.loadInstrumentsForSong(currentSong)
-		getLoader().setLoadMessage("Loading Buffers")
 		return await this.loadBuffers()
 	}
 	loadMetronomeSounds() {

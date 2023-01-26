@@ -1,17 +1,14 @@
 import { MidiLoader } from "../MidiLoader.js"
 import { Song } from "../Song.js"
 import { AudioPlayer } from "../audio/AudioPlayer.js"
-import { getLoader } from "../ui/Loader.js"
 import { getSetting } from "../settings/Settings.js"
 import { getMidiHandler } from "../MidiInputHandler.js"
-import { getCurrentMicNote } from "../MicInputHandler.js"
 import {
 	getTrackVolume,
 	isAnyTrackPlayalong,
 	isTrackRequiredToPlay,
 	setupTracks
 } from "./Tracks.js"
-import { Notification } from "../ui/Notification.js"
 
 const LOOK_AHEAD_TIME = 0.2
 const LOOK_AHEAD_TIME_WHEN_PLAYALONG = 0.02
@@ -66,7 +63,6 @@ class Player {
 	switchSoundfont(soundfontName) {
 		this.wasPaused = this.paused
 		this.pause()
-		getLoader().startLoad()
 		let nowTime = window.performance.now()
 		this.soundfontName = soundfontName
 		this.audioPlayer.switchSoundfont(soundfontName, this.song).then(resolve => {
@@ -74,7 +70,6 @@ class Player {
 				if (!this.wasPaused) {
 					this.resume()
 				}
-				getLoader().stopLoad()
 			}, Math.max(0, 500 - (window.performance.now() - nowTime)))
 		})
 	}
@@ -119,28 +114,21 @@ class Player {
 
 	async loadSong(theSong, fileName, name) {
 		this.audioPlayer.stopAllSources()
-		getLoader().startLoad()
-		getLoader().setLoadMessage("Loading " + fileName + ".")
 		if (this.audioPlayer.isRunning()) {
 			this.audioPlayer.suspend()
 		}
 
 		this.loading = true
 
-		getLoader().setLoadMessage("Parsing Midi File.")
 		try {
 			let midiFile = await MidiLoader.loadFile(theSong)
 			this.setSong(new Song(midiFile, fileName, name))
-			getLoader().setLoadMessage("Loading Instruments")
 
 			await this.audioPlayer.loadInstrumentsForSong(this.song)
 
-			getLoader().setLoadMessage("Creating Buffers")
-			return this.audioPlayer.loadBuffers().then(v => getLoader().stopLoad())
+			return this.audioPlayer.loadBuffers().then(console.log('loaded buffers!'))
 		} catch (error) {
 			console.log(error)
-			Notification.create("Couldn't read Midi-File - " + error, 2000)
-			getLoader().stopLoad()
 		}
 	}
 
@@ -166,61 +154,7 @@ class Player {
 		this.lastTime = this.audioPlayer.getContextTime()
 		this.resume()
 	}
-	// handleScroll(stacksize) {
-	// 	if (this.scrolling != 0) {
-	// 		if (!this.song) {
-	// 			this.scrolling = 0
-	// 			return
-	// 		}
-	// 		this.lastTime = this.audioPlayer.getContextTime()
-	// 		let newScrollOffset = this.scrollOffset + 0.01 * this.scrolling
-	// 		//get hypothetical time with new scrollOffset.
-	// 		let oldTime = this.getTimeWithScrollOffset(this.scrollOffset)
-	// 		let newTime = this.getTimeWithScrollOffset(newScrollOffset)
 
-	// 		//limit scroll past end
-	// 		if (this.song && newTime > 1 + this.song.getEnd() / 1000) {
-	// 			this.scrolling = 0
-	// 			newScrollOffset =
-	// 				this.getTimeWithoutScrollOffset() - (1 + this.song.getEnd() / 1000)
-	// 			this.scrollOffset + (1 + this.song.getEnd() / 1000 - this.getTime()) ||
-	// 				this.scrollOffset
-	// 		}
-
-	// 		//limit scroll past beginning
-	// 		if (newTime < oldTime && newTime < this.startDelay) {
-	// 			this.scrolling = 0
-	// 			newScrollOffset = this.getTimeWithoutScrollOffset() - this.startDelay
-	// 		}
-
-	// 		this.scrollOffset = newScrollOffset
-
-	// 		//dampen scroll amount somehow...
-	// 		this.scrolling =
-	// 			(Math.abs(this.scrolling) -
-	// 				Math.max(
-	// 					Math.abs(this.scrolling * 0.003),
-	// 					this.playbackSpeed * 0.001
-	// 				)) *
-	// 				(Math.abs(this.scrolling) / this.scrolling) || 0
-
-	// 		//set to zero if only minimal scrollingspeed left
-	// 		if (Math.abs(this.scrolling) <= this.playbackSpeed * 0.005) {
-	// 			this.scrolling = 0
-	// 			this.resetNoteSequence()
-	// 		}
-	// 		//limit recursion
-	// 		if (!stacksize) stacksize = 0
-	// 		if (stacksize > 50) {
-	// 			window.setTimeout(() => {
-	// 				this.handleScroll()
-	// 			}, 25)
-	// 			return
-	// 		}
-	// 		this.handleScroll(++stacksize)
-	// 		return
-	// 	}
-	// }
 	getBPM(time) {
 		let val = 0
 		if (this.song) {
@@ -239,7 +173,6 @@ class Player {
 		let delta = (currentContextTime - this.lastTime) * this.playbackSpeed
 
 		//Setting doesnt exist yet. Pitch detection is too bad for a whole piano.
-		this.addMicInputNotes()
 
 		this.clearOldPlayedInputNotes()
 
@@ -272,9 +205,6 @@ class Player {
 			this.requestNextTick()
 			return
 		}
-		// if (getSetting("enableMetronome")) {
-			// this.playMetronomeBeats(currentTime)
-		// }
 		while (this.isNextNoteReached(currentTime)) {
 			let toRemove = 0
 			forLoop: for (let i = 0; i < this.noteSequence.length; i++) {
@@ -334,22 +264,6 @@ class Player {
 		//TODO - Clear those that arent displayed anymore.. And/Or save them somewhere for playback.
 	}
 
-	addMicInputNotes() {
-		if (getSetting("micInputEnabled")) {
-			let currentMicNote = getCurrentMicNote()
-
-			// console.log(currentMicFrequency)
-			if (this.lastMicNote != currentMicNote) {
-				if (this.lastMicNote > -1) {
-					this.addInputNoteOff(this.lastMicNote)
-				}
-				if (currentMicNote > -1) {
-					this.addInputNoteOn(currentMicNote)
-				}
-			}
-			this.lastMicNote = currentMicNote
-		}
-	}
 
 	requestNextTick() {
 		window.requestAnimationFrame(this.playTick.bind(this))

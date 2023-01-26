@@ -1,5 +1,4 @@
 import { getDefaultSettings } from "./DefaultSettings.js"
-import { SettingUI } from "../ui/SettingUI.js"
 import {
 	getGlobalSavedSettings,
 	saveCurrentSettings
@@ -22,7 +21,6 @@ class Settings {
 				})
 			)
 		)
-		this.settingsUi = new SettingUI()
 	}
 	setSettingValue(settingId, value) {
 		this.settingsById[settingId].value = value
