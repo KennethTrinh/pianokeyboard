@@ -36,3 +36,22 @@
     transform: rotate(360deg);
   }
 }
+
+
+
+.btn {
+  margin: 3px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 3px;
+  outline: 0;
+  background-color: #eee;
+}
+
+th {
+  width: 10%;
+  font-weight: 500;
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: middle;
+}

@@ -203,10 +203,10 @@ const MusicPlayer = (props) => {
 
   return (
     <div>
-      <button id="play" onClick={handlePlayClick} disabled={playButtonDisabled}>Play</button>
-      <button id="stop" onClick={handleStopClick} disabled={stopButtonDisabled}>Stop</button>
-      <button id="pause" onClick={handlePauseClick} disabled={pauseButtonDisabled}>Pause</button>
-      <button id="resume" onClick={handleResumeClick} disabled={resumeButtonDisabled}>Resume</button>
+      <button id="play" className='btn' onClick={handlePlayClick} disabled={playButtonDisabled}>Play</button>
+      <button id="stop" className='btn' onClick={handleStopClick} disabled={stopButtonDisabled}>Stop</button>
+      <button id="pause" className='btn' onClick={handlePauseClick} disabled={pauseButtonDisabled}>Pause</button>
+      <button id="resume" className='btn' onClick={handleResumeClick} disabled={resumeButtonDisabled}>Resume</button>
 
     <div>
     <span>Progress:</span>
@@ -234,7 +234,7 @@ const MusicPlayer = (props) => {
         <div>
         {/* <span> Notes: {noteSequence? convertObjectsToString(writeNoteSeqs(noteSequence)) : 'No notes loaded'}</span> */}
       </div>    
-    </div>
+  </div>
   );
 }
 
