@@ -1,7 +1,7 @@
 import './App.css';
 import './css/style.css';
 import logo from './logo.svg';
-import AudioPlayer from './AudioPlayer';
+import MusicPlayer from './MusicPlayer';
 import { Piano, KeyboardShortcuts, MidiNumbers } from 'react-piano';
 import Playlist from './Playlist';
 import 'react-piano/dist/styles.css';
@@ -48,7 +48,7 @@ function PianoKeyboard() {
             keyWidthToHeight={0.2}
         /> 
         </div>
-        <AudioPlayer render={( currentNotes ) => { setCurrentNotes(currentNotes) }} width={width} {...{currentSong, setCurrentSong, currentSongURL, setCurrentSongURL}} />
+        <MusicPlayer render={( currentNotes ) => { setCurrentNotes(currentNotes) }} width={width} {...{currentSong, setCurrentSong, currentSongURL, setCurrentSongURL}} />
         <Playlist {...{currentSong, setCurrentSong, currentSongURL, setCurrentSongURL}} />
         </div>): <div width="1280" height="300" style={{textAlign: 'center', fontSize: '50px'}}> Click to begin! </div> 
         } 

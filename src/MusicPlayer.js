@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getPlayer, getPlayerState, getCurrentSong } from "./js/player/Player.js"
 
-const AudioPlayer = (props) => {
+const MusicPlayer = (props) => {
   const [noteSequence, setNoteSequence] = useState(null);
   const [playButtonDisabled, setPlayButtonDisabled] = useState(true);
   const [stopButtonDisabled, setStopButtonDisabled] = useState(true);
@@ -241,4 +241,4 @@ const AudioPlayer = (props) => {
 
 
 
-export default AudioPlayer;
+export default MusicPlayer;
