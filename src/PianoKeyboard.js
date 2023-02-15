@@ -22,12 +22,8 @@ function PianoKeyboard() {
   return (  
     <div className="mdl-color--grey-100 mdl-color-text--grey-700 mdl-base"> 
     <div className="mdl-layout mdl-js-layout mdl-layout--fixed-header">
-    <header className="mdl-layout__header">
-        <div className="mdl-layout__header-row">
-          <img src={logo} id="headerLogo" />
-          <span className="mdl-layout-title">Piano</span>
-          <div className="mdl-layout-spacer"></div>
-        </div>
+    <header className="mdl-layout__header" style={{textAlign: 'center', backgroundColor: '#ff69b4'}}>
+      Piano
     </header>
     </div>
     <canvas id="visualizationCanvas" width={width} height="300" />
@@ -42,7 +38,11 @@ function PianoKeyboard() {
             keyWidthToHeight={0.2}
         /> 
         </div>
-        <MusicPlayer render={( currentNotes ) => { setCurrentNotes(currentNotes) }} width={width} {...{currentSong, setCurrentSong, currentSongURL, setCurrentSongURL}} />
+        <MusicPlayer 
+            render={( currentNotes ) => { setCurrentNotes(currentNotes) }} 
+            width={width} 
+            {...{currentSong, setCurrentSong, currentSongURL, setCurrentSongURL}} 
+        />
         <Playlist {...{currentSong, setCurrentSong, currentSongURL, setCurrentSongURL}} />
       </div>
     </div>

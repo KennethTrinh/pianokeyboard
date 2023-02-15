@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Etude from './music/Etude op25 n11 \'\'Winter Wind\'\'.mid';
 import MiaSebastian from './music/Mia & Sebastian’s Theme - La La Land OST (Justin Hurwitz).MID';
 import './css/style.css';
+import './App.css'
 
 const Playlist = (props) => {
   const [playlist, setPlaylist] = useState([]);
@@ -78,8 +79,8 @@ const Playlist = (props) => {
         ))}
       </ul>
       <input type="file" accept=".mid" onChange={handleFileChange} />
-      <button onClick={prev}>Previous</button>
-      <button onClick={next}>Next</button>
+      <button className='btn' onClick={prev}>Previous</button>
+      <button className='btn' onClick={next}>Next</button>
       <p>Current Song: {currentSong}</p>
     </div>
   );

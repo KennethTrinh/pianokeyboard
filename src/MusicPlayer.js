@@ -201,40 +201,40 @@ const MusicPlayer = (props) => {
   }
 
 
-  return (
-    <div>
+  return (<>
+    <div className='buttons'>
       <button id="play" className='btn' onClick={handlePlayClick} disabled={playButtonDisabled}>Play</button>
       <button id="stop" className='btn' onClick={handleStopClick} disabled={stopButtonDisabled}>Stop</button>
       <button id="pause" className='btn' onClick={handlePauseClick} disabled={pauseButtonDisabled}>Pause</button>
       <button id="resume" className='btn' onClick={handleResumeClick} disabled={resumeButtonDisabled}>Resume</button>
+    </div>
+    <div className='sliders'>
+        <div className='range__slider'>
+          <span>Progress:</span>
+              <input type="range"
+                id='slider'
+                min={0}
+                max={getCurrentSong() ? getCurrentSong().getEnd() / 1000 : 0}
+                value={sliderValue ? sliderValue : 0}
+                onChange={handleSliderChange}
+              />
+          <span>{getPlayer().getTime() ? getPlayer().getTime().toFixed(2) : '0'}</span>
+        </div>
 
-    <div>
-    <span>Progress:</span>
-    <input type="range"
-      min={0}
-      max={getCurrentSong() ? getCurrentSong().getEnd() / 1000 : 0}
-      value={sliderValue ? sliderValue : 0}
-      onChange={handleSliderChange}
-    />
-       <span>{getPlayer().getTime() ? getPlayer().getTime().toFixed(3) : '0'}</span>
+        <div className='range__slider'>
+          <span>Pitch:</span>
+              <input
+                type="range"
+                min={-12}
+                max={12}
+                value={pitchValue}
+                onChange={handleChange}
+              />
+          <span>{pitchValue}</span>
+        </div> 
     </div>
 
-  <div>
-      <span>Pitch:</span>
-      <input
-        type="range"
-        min={-12}
-        max={12}
-        value={pitchValue}
-        onChange={handleChange}
-      />
-        <span>{pitchValue}</span>
-  </div>
-
-        <div>
-        {/* <span> Notes: {noteSequence? convertObjectsToString(writeNoteSeqs(noteSequence)) : 'No notes loaded'}</span> */}
-      </div>    
-  </div>
+    </>
   );
 }
 
