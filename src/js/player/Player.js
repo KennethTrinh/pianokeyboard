@@ -103,11 +103,11 @@ class Player {
 		let i = 0
 		let noteSeq = this.song.getNoteSequence()
 		let nextNote = noteSeq[i]
-		while (nextNote.track != trackIndex && i < noteSeq.length - 1) {
+		while (nextNote.track !== trackIndex && i < noteSeq.length - 1) {
 			i++
 			nextNote = noteSeq[i]
 		}
-		if (nextNote.track == trackIndex) {
+		if (nextNote.track === trackIndex) {
 			return nextNote.instrument
 		}
 	}
@@ -184,7 +184,7 @@ class Player {
 
 		let oldProgress = this.progress
 		this.lastTime = currentContextTime
-		if (!this.paused && this.scrolling == 0) {
+		if (!this.paused && this.scrolling === 0) {
 			this.progress += Math.min(0.1, delta)
 		} else {
 			this.requestNextTick()
@@ -192,7 +192,7 @@ class Player {
 		}
 
 		let soundfontName = getSetting("soundfontName")
-		if (soundfontName != this.soundfontName) {
+		if (soundfontName !== this.soundfontName) {
 			this.switchSoundfont(soundfontName)
 			this.requestNextTick()
 			return
@@ -207,11 +207,11 @@ class Player {
 		}
 		while (this.isNextNoteReached(currentTime)) {
 			let toRemove = 0
-			forLoop: for (let i = 0; i < this.noteSequence.length; i++) {
+			for (let i = 0; i < this.noteSequence.length; i++) {
 				if (currentTime > 0.05 + this.noteSequence[i].timestamp / 1000) {
 					toRemove++
 				} else {
-					break forLoop
+					break
 				}
 			}
 			if (toRemove > 0) {
@@ -232,33 +232,6 @@ class Player {
 
 		this.requestNextTick()
 	}
-
-	// playMetronomeBeats(currentTime) {
-	// 	this.playedBeats = this.playedBeats || {}
-	// 	let beatsBySecond = getCurrentSong().temporalData.beatsBySecond
-	// 	let secondsToCheck = [Math.floor(currentTime), Math.floor(currentTime) + 1]
-	// 	secondsToCheck.forEach(second => {
-	// 		if (beatsBySecond[second]) {
-	// 			beatsBySecond[second].forEach(beatTimestamp => {
-	// 				if (
-	// 					!this.playedBeats.hasOwnProperty(beatTimestamp) &&
-	// 					beatTimestamp / 1000 < currentTime + 0.5
-	// 				) {
-	// 					let newMeasure =
-	// 						getCurrentSong().measureLines[Math.floor(beatTimestamp / 1000)] &&
-	// 						getCurrentSong().measureLines[
-	// 							Math.floor(beatTimestamp / 1000)
-	// 						].includes(beatTimestamp)
-	// 					this.playedBeats[beatTimestamp] = true
-	// 					this.audioPlayer.playBeat(
-	// 						beatTimestamp / 1000 - currentTime,
-	// 						newMeasure
-	// 					)
-	// 				}
-	// 			})
-	// 		}
-	// 	})
-	// }
 
 	clearOldPlayedInputNotes() {
 		//TODO - Clear those that arent displayed anymore.. And/Or save them somewhere for playback.

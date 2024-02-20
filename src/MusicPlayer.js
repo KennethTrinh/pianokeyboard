@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getPlayer, getPlayerState, getCurrentSong } from "./js/player/Player.js"
+import { getPlayer, getCurrentSong } from "./js/player/Player.js"
 
 const MusicPlayer = (props) => {
   const [noteSequence, setNoteSequence] = useState(null);
@@ -8,11 +8,12 @@ const MusicPlayer = (props) => {
   const [pauseButtonDisabled, setPauseButtonDisabled] = useState(true);
   const [resumeButtonDisabled, setResumeButtonDisabled] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
+  const animationId = useRef();
   const DURATION_WINDOW = 3
-  let animationId = null;
 
-  const [sliderValue, setSliderValue] = useState(0);
+  const [progressValue, setProgressValue] = useState(0);
   const [pitchValue, setPitchValue] = useState(0);
+  const [speedValue, setSpeedValue] = useState(1);
 
 
   useEffect( () => {
@@ -117,29 +118,29 @@ const MusicPlayer = (props) => {
 
 
 
-  const computeCurrentTime = (timestamp) => {
-      setSliderValue(getPlayer().getTime());
+const computeCurrentTime = () => {
+      setProgressValue(getPlayer().getTime());
       processAudio();
       if (getPlayer().getTime() > getCurrentSong().getEnd()/ 1000) {
           setIsPlaying(false);
           getPlayer().stop();
-          setSliderValue(0);
+          setProgressValue(0);
           setPlayButtonDisabled(false);
           setStopButtonDisabled(true);
           setPauseButtonDisabled(true);
           setResumeButtonDisabled(true);
       }
-      animationId = requestAnimationFrame(computeCurrentTime);
+      animationId.current = requestAnimationFrame(computeCurrentTime);
   }
 
   useEffect(() => {
       if (isPlaying) {
-          animationId = requestAnimationFrame(computeCurrentTime);
+          animationId.current = requestAnimationFrame(computeCurrentTime);
       } else {
-          cancelAnimationFrame(animationId);
+          cancelAnimationFrame(animationId.current);
       }
       return () => {
-          cancelAnimationFrame(animationId);
+          cancelAnimationFrame(animationId.current);
       }
   }, [isPlaying, pitchValue]);
 
@@ -184,24 +185,25 @@ const MusicPlayer = (props) => {
     setResumeButtonDisabled(true);
   }
 
-  function handleSliderChange(event) {
-    setSliderValue(event.target.value);
+  function handleProgressChange(event) {
+    setProgressValue(event.target.value);
     getPlayer().setTime(event.target.value);
     processAudio();
   }
 
-  const handleChange = (event) => {
+  const handlePitchChange = (event) => {
     setPitchValue(parseInt(event.target.value));
     getPlayer().pitch = parseInt(event.target.value) ;
     processAudio();
   }
-  
-  function convertObjectsToString(objects) {
-    return objects.map(obj => JSON.stringify(obj)).join(", ");
+
+  const handleSpeedChange = (event) => {  
+    setSpeedValue(parseFloat(event.target.value));
+    getPlayer().playbackSpeed = parseFloat(event.target.value);
+    processAudio();
   }
-
-
-  return (<>
+  
+  return (<>  
     <div className='buttons'>
       <button id="play" className='btn' onClick={handlePlayClick} disabled={playButtonDisabled}>Play</button>
       <button id="stop" className='btn' onClick={handleStopClick} disabled={stopButtonDisabled}>Stop</button>
@@ -215,12 +217,11 @@ const MusicPlayer = (props) => {
                 id='slider'
                 min={0}
                 max={getCurrentSong() ? getCurrentSong().getEnd() / 1000 : 0}
-                value={sliderValue ? sliderValue : 0}
-                onChange={handleSliderChange}
+                value={progressValue ? progressValue : 0}
+                onChange={handleProgressChange}
               />
           <span>{getPlayer().getTime() ? getPlayer().getTime().toFixed(2) : '0'}</span>
         </div>
-
         <div className='range__slider'>
           <span>Pitch:</span>
               <input
@@ -228,12 +229,23 @@ const MusicPlayer = (props) => {
                 min={-12}
                 max={12}
                 value={pitchValue}
-                onChange={handleChange}
+                onChange={handlePitchChange}
               />
           <span>{pitchValue}</span>
         </div> 
+        <div className='range__slider'>
+          <span>Speed:</span>
+              <input
+                type="range"
+                min={0.5}
+                max={2}
+                step={0.1}
+                value={speedValue}
+                onChange={handleSpeedChange}
+              />
+          <span>{speedValue}</span>
+          </div>
     </div>
-
     </>
   );
 }

@@ -1,8 +1,7 @@
 import './App.css';
 import './css/style.css';
-import logo from './logo.svg';
 import MusicPlayer from './MusicPlayer';
-import { Piano, KeyboardShortcuts, MidiNumbers } from 'react-piano';
+import { Piano, MidiNumbers } from 'react-piano';
 import Playlist from './Playlist';
 import 'react-piano/dist/styles.css';
 import { useState } from 'react';
@@ -14,7 +13,7 @@ function PianoKeyboard() {
   const lastNote = MidiNumbers.fromNote('c8');
 
   const [currentNotes, setCurrentNotes] = useState([]);
-  const { height, width } = useWindowDimensions();
+  const { height, width } = useWindowDimensions(); 
   const [currentSong, setCurrentSong] = useState('');
   const [currentSongURL, setCurrentSongURL] = useState('');
 

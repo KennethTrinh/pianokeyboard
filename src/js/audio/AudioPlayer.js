@@ -25,7 +25,7 @@ export class AudioPlayer {
 		return this.context
 	}
 	isRunning() {
-		return this.context.state == "running"
+		return this.context.state === "running"
 	}
 	resume() {
 		this.context.resume()
@@ -146,7 +146,7 @@ export class AudioPlayer {
 				SoundfontLoader.loadInstrument("percussion", "FluidR3_GM")
 			)
 		}
-		if (neededInstruments.length == 0) {
+		if (neededInstruments.length === 0) {
 			return Promise.resolve()
 		}
 		await Promise.all(neededInstruments)
