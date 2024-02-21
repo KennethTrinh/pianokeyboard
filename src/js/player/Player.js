@@ -77,8 +77,19 @@ class Player {
 	getTimeWithScrollOffset(scrollOffset) {
 		return this.progress + this.startDelay - scrollOffset
 	}
-	getTime() {
-		return this.progress + this.startDelay - this.scrollOffset
+	getTime(format=false) {
+		let unformatted = this.progress + this.startDelay - this.scrollOffset
+		if (format) { // format time to HH:MM:SS
+			if (unformatted < 0) {
+				let seconds = Math.floor(Math.abs(unformatted));
+				return `-0:${seconds < 10 ? '0' : ''}${seconds}`
+			}
+			let seconds = Math.floor(unformatted);
+			let minutes = Math.floor(seconds / 60);
+			let remainingSeconds = seconds % 60;
+			return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+		}
+		return unformatted
 	}
 	getTimeWithoutScrollOffset() {
 		return this.progress + this.startDelay

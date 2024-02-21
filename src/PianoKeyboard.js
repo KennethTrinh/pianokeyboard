@@ -21,11 +21,9 @@ function PianoKeyboard() {
   return (  
     <div className="mdl-color--grey-100 mdl-color-text--grey-700 mdl-base"> 
     <div className="mdl-layout mdl-js-layout mdl-layout--fixed-header">
-    <header className="mdl-layout__header" style={{textAlign: 'center', backgroundColor: '#ff69b4'}}>
-      Piano
-    </header>
+    <header className="mdl-layout__header" style={{border: "20px solid white"}}/>
     </div>
-    <canvas id="visualizationCanvas" width={width} height="300" />
+    <canvas id="visualizationCanvas" width={width} height={height*0.4} />
       <div >
         <div id="myPiano">
         <Piano

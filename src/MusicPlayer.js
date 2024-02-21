@@ -86,7 +86,7 @@ const MusicPlayer = (props) => {
     const ctx = canvas.getContext("2d");
     const currentTime = getPlayer().getTime();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#3ac8da";
+    ctx.fillStyle = "pink";
     notes = notes.filter(note => note.pitch + pitchValue >= 21 && note.pitch + pitchValue <= 108);
     notes.forEach(note => {
         const { startWidth, endWidth } = findKeyPosition(note.pitch);
@@ -220,7 +220,7 @@ const computeCurrentTime = () => {
                 value={progressValue ? progressValue : 0}
                 onChange={handleProgressChange}
               />
-          <span>{getPlayer().getTime() ? getPlayer().getTime().toFixed(2) : '0'}</span>
+          <span>{getPlayer().getTime(true)}</span>
         </div>
         <div className='range__slider'>
           <span>Pitch:</span>
