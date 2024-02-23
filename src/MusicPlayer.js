@@ -9,42 +9,66 @@ const MusicPlayer = (props) => {
   const [resumeButtonDisabled, setResumeButtonDisabled] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const animationId = useRef();
-  const DURATION_WINDOW = 3
-
+  
   const [progressValue, setProgressValue] = useState(0);
   const [pitchValue, setPitchValue] = useState(0);
   const [speedValue, setSpeedValue] = useState(1);
 
-
+  const DURATION_WINDOW = 3;
+  const [span, setSpan] = useState(0);
+  
   useEffect( () => {
-  if (noteSequence) {  // if previously playing
-      setIsPlaying(false);
-      getPlayer().stop();
-      setPlayButtonDisabled(false);
-      setStopButtonDisabled(true);
-      setPauseButtonDisabled(true);
-      setResumeButtonDisabled(true);
-  }
-  if (props.currentSongURL) {
-    let f = props.currentSongURL;
-    let reader = new FileReader();
-    reader.onload = async () => {
-      await getPlayer().loadSong(reader.result, f.name);
-      const ns = getCurrentSong().getNoteSequence().map(midi => ({
-        pitch: midi.midiNoteNumber,
-        startTime: midi.timestamp / 1000,
-        endTime: (midi.timestamp + midi.duration) / 1000,
-        velocity: midi.velocity
-      }));
-      setNoteSequence(ns);
-      if (ns)
+    if (noteSequence) {  // if previously playing
+        setIsPlaying(false);
+        getPlayer().stop();
         setPlayButtonDisabled(false);
+        setStopButtonDisabled(true);
+        setPauseButtonDisabled(true);
+        setResumeButtonDisabled(true);
     }
-    reader.readAsDataURL(f);
-  }
+    if (props.currentSongURL) {
+      let f = props.currentSongURL;
+      let reader = new FileReader();
+      reader.onload = async () => {
+        await getPlayer().loadSong(reader.result, f.name);
+        const ns = getCurrentSong().getNoteSequence().map(midi => ({
+          pitch: midi.midiNoteNumber,
+          startTime: midi.timestamp / 1000,
+          endTime: (midi.timestamp + midi.duration) / 1000,
+          velocity: midi.velocity
+        }));
+        setNoteSequence(ns);
+        setSpan(computeSpan(ns));
+        if (ns)
+          setPlayButtonDisabled(false);
+      }
+      reader.readAsDataURL(f);
+    }
   }, [props.currentSongURL]);
 
-
+  const computeSpan = (ns) => {
+    /*
+    ns = [
+    {pitch: 45, startTime: 1.142856, endTime: 3.142854, velocity: 50},
+    {pitch: 33, startTime: 1.142856, endTime: 2.285712, velocity: 50},
+    ]
+    ns is a list of note objects, where each note is sorted by start time
+    assume DURATION_WINDOW = 3 is a window striding across ns, and we want to find the 
+    maximum number notes playing in the window -- sweep line for O(nlogn) !
+    */
+    let events = [];
+    for (let note of ns) {
+        events.push({time: Math.floor(note.startTime / DURATION_WINDOW), change: 1});
+        events.push({time: Math.floor(note.endTime / DURATION_WINDOW) + 1, change: -1}); // end + 1 because the note stops playing in the next window
+    }
+    events.sort((a, b) => a.time - b.time);
+    let [max, current] = [0, 0];
+    for (let event of events) {
+        current += event.change;
+        max = Math.max(max, current);
+    }
+    return max;
+  }
 
   const binarySearch = (noteObjects, currentTime) => {
     let left = 0;
@@ -69,8 +93,8 @@ const MusicPlayer = (props) => {
     if (noteSequence) {
         const currentTime = getPlayer().getTime();
         const currentNoteIndex = binarySearch(noteSequence, currentTime);
-        const startIndex = Math.max(0, currentNoteIndex - 100); 
-        const endIndex = Math.min(noteSequence.length, currentNoteIndex + 100);
+        const startIndex = Math.max(0, currentNoteIndex - span); 
+        const endIndex = Math.min(noteSequence.length, currentNoteIndex + span);
         const buffer = noteSequence.slice(startIndex, endIndex);
         const currentNotes = currentNoteIndex === -1 ? [] :  
                   buffer.filter(note => {
@@ -82,18 +106,24 @@ const MusicPlayer = (props) => {
     }
   }
   const drawCanvas = (notes) => {
-    const canvas = document.getElementById("visualizationCanvas");
-    const ctx = canvas.getContext("2d");
+    let canvas = document.getElementById("visualizationCanvas");
+    let canvasContext = canvas.getContext("2d");
+    canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+    let grd = canvasContext.createLinearGradient(0, 0, 0, canvas.height);
+    grd.addColorStop(0, 'white');   // top
+    grd.addColorStop(1, 'pink');  // bottom
+    canvasContext.fillStyle = grd;
+    canvasContext.strokeStyle = '#ff69b4';
+    canvasContext.lineWidth = 2;
     const currentTime = getPlayer().getTime();
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "pink";
     notes = notes.filter(note => note.pitch + pitchValue >= 21 && note.pitch + pitchValue <= 108);
     notes.forEach(note => {
         const { startWidth, endWidth } = findKeyPosition(note.pitch);
         const startY = canvas.height - (note.startTime - currentTime) / (DURATION_WINDOW) * canvas.height;
         const endY = canvas.height - (note.endTime - currentTime) / (DURATION_WINDOW) * canvas.height;
         if (note.startTime <= currentTime + DURATION_WINDOW) {
-            ctx.fillRect(startWidth, startY, endWidth - startWidth, endY - startY);
+            canvasContext.fillRect(startWidth, startY, endWidth - startWidth, endY - startY);
+            canvasContext.strokeRect(startWidth, startY, endWidth - startWidth, endY - startY);
         }
     });
   }
@@ -117,8 +147,7 @@ const MusicPlayer = (props) => {
   }
 
 
-
-const computeCurrentTime = () => {
+const audioLoop = () => {
       setProgressValue(getPlayer().getTime());
       processAudio();
       if (getPlayer().getTime() > getCurrentSong().getEnd()/ 1000) {
@@ -130,12 +159,12 @@ const computeCurrentTime = () => {
           setPauseButtonDisabled(true);
           setResumeButtonDisabled(true);
       }
-      animationId.current = requestAnimationFrame(computeCurrentTime);
+      animationId.current = requestAnimationFrame(audioLoop);
   }
 
   useEffect(() => {
       if (isPlaying) {
-          animationId.current = requestAnimationFrame(computeCurrentTime);
+          animationId.current = requestAnimationFrame(audioLoop);
       } else {
           cancelAnimationFrame(animationId.current);
       }

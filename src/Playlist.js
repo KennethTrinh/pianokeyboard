@@ -67,7 +67,6 @@ const Playlist = (props) => {
     <h1 style={{
         fontSize: "2em",
         fontWeight: "bold",
-        textDecoration: "underline",
         marginTop: "20px",
         color: "#ff69b4"
       }}>My Hopeless Romantic Playlist</h1>
