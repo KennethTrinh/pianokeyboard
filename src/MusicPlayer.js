@@ -3,10 +3,7 @@ import { getPlayer, getCurrentSong } from "./js/player/Player.js"
 
 const MusicPlayer = (props) => {
   const [noteSequence, setNoteSequence] = useState(null);
-  const [playButtonDisabled, setPlayButtonDisabled] = useState(true);
-  const [stopButtonDisabled, setStopButtonDisabled] = useState(true);
-  const [pauseButtonDisabled, setPauseButtonDisabled] = useState(true);
-  const [resumeButtonDisabled, setResumeButtonDisabled] = useState(true);
+  const [playPauseButton, setPlayPauseButton] = useState('pause');
   const [isPlaying, setIsPlaying] = useState(false);
   const animationId = useRef();
   
@@ -19,31 +16,31 @@ const MusicPlayer = (props) => {
   
   useEffect( () => {
     if (noteSequence) {  // if previously playing
-        setIsPlaying(false);
-        getPlayer().stop();
-        setPlayButtonDisabled(false);
-        setStopButtonDisabled(true);
-        setPauseButtonDisabled(true);
-        setResumeButtonDisabled(true);
+      clearCanvas();
+      setIsPlaying(false);
+      getPlayer().stop();
+      setPlayPauseButton('pause');
+      setProgressValue(0);
     }
-    if (props.currentSongURL) {
-      let f = props.currentSongURL;
-      let reader = new FileReader();
-      reader.onload = async () => {
-        await getPlayer().loadSong(reader.result, f.name);
-        const ns = getCurrentSong().getNoteSequence().map(midi => ({
-          pitch: midi.midiNoteNumber,
-          startTime: midi.timestamp / 1000,
-          endTime: (midi.timestamp + midi.duration) / 1000,
-          velocity: midi.velocity
-        }));
-        setNoteSequence(ns);
-        setSpan(computeSpan(ns));
-        if (ns)
-          setPlayButtonDisabled(false);
-      }
-      reader.readAsDataURL(f);
+    if (!props.currentSongURL) {
+      return;
     }
+    let f = props.currentSongURL;
+    let reader = new FileReader();
+    reader.onload = async () => {
+      await getPlayer().loadSong(reader.result, f.name);
+      const ns = getCurrentSong().getNoteSequence().map(midi => ({
+        pitch: midi.midiNoteNumber,
+        startTime: midi.timestamp / 1000,
+        endTime: (midi.timestamp + midi.duration) / 1000,
+        velocity: midi.velocity
+      }));
+      setNoteSequence(ns);
+      setSpan(computeSpan(ns));
+      if (ns)
+        setPlayPauseButton('pause');
+    }
+    reader.readAsDataURL(f);
   }, [props.currentSongURL]);
 
   const computeSpan = (ns) => {
@@ -105,6 +102,13 @@ const MusicPlayer = (props) => {
         
     }
   }
+
+  const clearCanvas = () => {
+    let canvas = document.getElementById("visualizationCanvas");
+    let canvasContext = canvas.getContext("2d");
+    canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
   const drawCanvas = (notes) => {
     let canvas = document.getElementById("visualizationCanvas");
     let canvasContext = canvas.getContext("2d");
@@ -147,17 +151,14 @@ const MusicPlayer = (props) => {
   }
 
 
-const audioLoop = () => {
+  const audioLoop = () => {
       setProgressValue(getPlayer().getTime());
       processAudio();
       if (getPlayer().getTime() > getCurrentSong().getEnd()/ 1000) {
           setIsPlaying(false);
           getPlayer().stop();
           setProgressValue(0);
-          setPlayButtonDisabled(false);
-          setStopButtonDisabled(true);
-          setPauseButtonDisabled(true);
-          setResumeButtonDisabled(true);
+          setPlayPauseButton('pause');
       }
       animationId.current = requestAnimationFrame(audioLoop);
   }
@@ -175,43 +176,19 @@ const audioLoop = () => {
 
 
 
-
-  const handlePlayClick = () => {
-    if (getCurrentSong()) {
-      setIsPlaying(true); 
-      getPlayer().startPlay();
-      setPlayButtonDisabled(true);
-      setStopButtonDisabled(false);
-      setPauseButtonDisabled(false);
-      setResumeButtonDisabled(true);
+  const handlePlayPauseClick = () => {
+    if (!getCurrentSong()) {
+      return;
     }
-  }
-
-  const handleStopClick = () => {
-    setIsPlaying(false);
-    getPlayer().stop();
-    setPlayButtonDisabled(false);
-    setStopButtonDisabled(true);
-    setPauseButtonDisabled(true);
-    setResumeButtonDisabled(true);
-  }
-
-  const handlePauseClick = () => {
-    setIsPlaying(false);
-    getPlayer().pause();
-    setPlayButtonDisabled(true);
-    setStopButtonDisabled(false);
-    setPauseButtonDisabled(true);
-    setResumeButtonDisabled(false);
-  }
-
-  const handleResumeClick = () => {
-    setIsPlaying(true);
-    getPlayer().startPlay();
-    setPlayButtonDisabled(true);
-    setStopButtonDisabled(false);
-    setPauseButtonDisabled(false);
-    setResumeButtonDisabled(true);
+    if (playPauseButton === 'play') {
+      setPlayPauseButton('pause');
+      getPlayer().pause();
+      setIsPlaying(false);
+    } else if (playPauseButton === 'pause') {
+      setPlayPauseButton('play');
+      getPlayer().startPlay();
+      setIsPlaying(true);
+    }
   }
 
   function handleProgressChange(event) {
@@ -234,10 +211,7 @@ const audioLoop = () => {
   
   return (<>  
     <div className='buttons'>
-      <button id="play" className='btn' onClick={handlePlayClick} disabled={playButtonDisabled}>Play</button>
-      <button id="stop" className='btn' onClick={handleStopClick} disabled={stopButtonDisabled}>Stop</button>
-      <button id="pause" className='btn' onClick={handlePauseClick} disabled={pauseButtonDisabled}>Pause</button>
-      <button id="resume" className='btn' onClick={handleResumeClick} disabled={resumeButtonDisabled}>Resume</button>
+      <button id="play-pause" className='btn' onClick={handlePlayPauseClick} > {playPauseButton === 'pause' ? 'Play' : 'Pause'} </button>
     </div>
     <div className='sliders'>
         <div className='range__slider'>

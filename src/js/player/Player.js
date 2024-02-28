@@ -158,7 +158,6 @@ class Player {
 		this.newSongCallbacks.forEach(callback => callback())
 	}
 	startPlay() {
-		console.log("Starting Song")
 		this.wasPaused = false
 
 		this.resetNoteSequence()
@@ -286,7 +285,6 @@ class Player {
 	}
 	resume() {
 		if (!this.song || !this.paused) return
-		console.log("Resuming Song")
 		this.paused = false
 		this.resetNoteSequence()
 		this.audioPlayer.resume()
@@ -301,7 +299,6 @@ class Player {
 	}
 
 	pause() {
-		console.log("Pausing Song")
 		this.pauseTime = this.getTime()
 		this.paused = true
 	}

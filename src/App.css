@@ -55,11 +55,12 @@
 
 .btn {
   margin: 3px;
-  padding: 6px 12px;
   border: 0;
   border-radius: 3px;
   outline: 0;
   background-color: #eee;
+  font-size: 1vw; /* Adjust as needed */
+  padding: 1vh 2vw;
 }
 
 .btn:hover {
@@ -69,7 +70,7 @@
 .range__slider {
   display: flex;
   padding: 6px 1px;
-  width: 45%;
+  width: 60%
 }
 
 .range__slider [type="range"] {

@@ -154,7 +154,6 @@ export class AudioPlayer {
 
 	async loadBuffers() {
 		return await SoundfontLoader.getBuffers(this.context).then(buffers => {
-			console.log("Buffers loaded")
 			this.loading = false
 		})
 	}
