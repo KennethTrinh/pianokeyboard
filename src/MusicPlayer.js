@@ -43,6 +43,45 @@ const MusicPlayer = (props) => {
     reader.readAsDataURL(f);
   }, [props.currentSongURL]);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'p') {
+        setPlayPauseButton((prev) => {
+          if (prev === 'play') {
+            getPlayer().pause();
+            setIsPlaying(false);
+            return 'pause';
+          } else {
+            getPlayer().startPlay();
+            setIsPlaying(true);
+            return 'play';
+          }
+        });
+      } else if (event.key === 'ArrowRight') {
+        let seekTime = getPlayer().getTime() + (speedValue * 1.5);
+        console.log(seekTime);
+        event.preventDefault();
+        setProgressValue(seekTime);
+        getPlayer().setTime(seekTime);
+        processAudio();
+      } else if (event.key === 'ArrowLeft') {
+        let seekTime = getPlayer().getTime() - (speedValue * 1.5);
+        event.preventDefault();
+        setProgressValue(seekTime);
+        getPlayer().setTime(seekTime);
+        processAudio();
+      } else if (event.key === 'f') {
+        document.querySelector('input[type="file"]').click();
+      }
+    };
+  
+    window.addEventListener('keydown', handleKeyDown);
+  
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [noteSequence, speedValue]);
+
   const computeSpan = (ns) => {
     /*
     ns = [
@@ -87,20 +126,19 @@ const MusicPlayer = (props) => {
   }
 
   const processAudio = () => {
-    if (noteSequence) {
-        const currentTime = getPlayer().getTime();
-        const currentNoteIndex = binarySearch(noteSequence, currentTime);
-        const startIndex = Math.max(0, currentNoteIndex - span); 
-        const endIndex = Math.min(noteSequence.length, currentNoteIndex + span);
-        const buffer = noteSequence.slice(startIndex, endIndex);
-        const currentNotes = currentNoteIndex === -1 ? [] :  
-                  buffer.filter(note => {
-                  return currentTime >= note.startTime && currentTime < note.endTime;
-              });
-        drawCanvas(buffer);
-        props.render(currentNotes.map( note => note.pitch + pitchValue)); //calls setCurrentNotes in PianoKeyboard.js
-        
-    }
+    if (noteSequence === null) return;
+
+    const currentTime = getPlayer().getTime();
+    const currentNoteIndex = binarySearch(noteSequence, currentTime);
+    const startIndex = Math.max(0, currentNoteIndex - span); 
+    const endIndex = Math.min(noteSequence.length, currentNoteIndex + span);
+    const buffer = noteSequence.slice(startIndex, endIndex);
+    const currentNotes = currentNoteIndex === -1 ? [] :  
+              buffer.filter(note => {
+              return currentTime >= note.startTime && currentTime < note.endTime;
+          });
+    drawCanvas(buffer);
+    props.render(currentNotes.map( note => note.pitch + pitchValue)); //calls setCurrentNotes in PianoKeyboard.js
   }
 
   const clearCanvas = () => {
@@ -204,8 +242,9 @@ const MusicPlayer = (props) => {
   }
 
   const handleSpeedChange = (event) => {  
-    setSpeedValue(parseFloat(event.target.value));
-    getPlayer().playbackSpeed = parseFloat(event.target.value);
+    let value = Math.pow(2, parseFloat(event.target.value));
+    setSpeedValue(value);
+    getPlayer().playbackSpeed = value;
     processAudio();
   }
   
@@ -240,13 +279,13 @@ const MusicPlayer = (props) => {
           <span>Speed:</span>
               <input
                 type="range"
-                min={0.5}
-                max={2}
-                step={0.1}
-                value={speedValue}
+                min={-2} // 2^-2 = 0.25
+                max={2} // 2^2 = 4
+                step={0.025}
+                value={Math.round(Math.log2(speedValue) * 10) / 10}
                 onChange={handleSpeedChange}
               />
-          <span>{speedValue}</span>
+          <span>{Math.round(speedValue * 10) / 10}</span>
           </div>
     </div>
     </>
