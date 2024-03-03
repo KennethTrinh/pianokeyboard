@@ -1,17 +1,17 @@
 {
   "files": {
-    "main.css": "/pianokeyboard/static/css/main.b031d789.css",
-    "main.js": "/pianokeyboard/static/js/main.2932fbef.js",
+    "main.css": "/pianokeyboard/static/css/main.48ea1452.css",
+    "main.js": "/pianokeyboard/static/js/main.4fc6fd6e.js",
     "static/js/453.bd78524e.chunk.js": "/pianokeyboard/static/js/453.bd78524e.chunk.js",
     "static/media/Etude op25 n11 ''Winter Wind''.mid": "/pianokeyboard/static/media/Etude op25 n11 ''Winter Wind''.6200c2e8d1fc2c8eb56f.mid",
     "static/media/Mia & Sebastian’s Theme - La La Land OST (Justin Hurwitz).MID": "/pianokeyboard/static/media/Mia & Sebastian’s Theme - La La Land OST (Justin Hurwitz).586d3d5f6ff7acd90437.MID",
     "index.html": "/pianokeyboard/index.html",
-    "main.b031d789.css.map": "/pianokeyboard/static/css/main.b031d789.css.map",
-    "main.2932fbef.js.map": "/pianokeyboard/static/js/main.2932fbef.js.map",
+    "main.48ea1452.css.map": "/pianokeyboard/static/css/main.48ea1452.css.map",
+    "main.4fc6fd6e.js.map": "/pianokeyboard/static/js/main.4fc6fd6e.js.map",
     "453.bd78524e.chunk.js.map": "/pianokeyboard/static/js/453.bd78524e.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.b031d789.css",
-    "static/js/main.2932fbef.js"
+    "static/css/main.48ea1452.css",
+    "static/js/main.4fc6fd6e.js"
   ]
 }
