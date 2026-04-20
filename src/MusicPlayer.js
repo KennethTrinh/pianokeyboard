@@ -287,16 +287,15 @@ const MusicPlayer = (props) => {
   };
 
   return (
-    <>
+    <div style={{ textAlign: "center" }}>
       <div className="buttons">
         <button id="play-pause" className="btn" onClick={handlePlayPauseClick}>
-          {" "}
-          {playPauseButton === "pause" ? "Play" : "Pause"}{" "}
+          {playPauseButton === "pause" ? "Play" : "Pause"}
         </button>
       </div>
       <div className="sliders">
         <div className="range__slider">
-          <span>Progress:</span>
+          <span>Progress</span>
           <input
             type="range"
             id="slider"
@@ -308,7 +307,7 @@ const MusicPlayer = (props) => {
           <span>{getPlayer().getTime(true)}</span>
         </div>
         <div className="range__slider">
-          <span>Pitch:</span>
+          <span>Pitch</span>
           <input
             type="range"
             min={-12}
@@ -319,7 +318,7 @@ const MusicPlayer = (props) => {
           <span>{pitchValue}</span>
         </div>
         <div className="range__slider">
-          <span>Speed:</span>
+          <span>Speed</span>
           <input
             type="range"
             min={-2} // 2^-2 = 0.25
@@ -331,7 +330,7 @@ const MusicPlayer = (props) => {
           <span>{Math.round(speedValue * 10) / 10}</span>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

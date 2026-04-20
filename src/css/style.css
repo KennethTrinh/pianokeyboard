@@ -72,12 +72,13 @@ canvas {
 
   
   .playlist-container {
-    display: inline-block;
+    display: block;
     margin: 20px auto;
     border: 1.5px solid #f9a8d4;
     border-radius: 12px;
     padding: 16px 24px;
-    min-width: 320px;
+    width: 60%;
+    box-sizing: border-box;
     background: #fff0f6;
   }
 
