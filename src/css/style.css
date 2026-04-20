@@ -71,14 +71,64 @@ canvas {
   }
 
   
-  .song-item {
-    padding: 5px;
-    cursor: pointer;
-    color: black;
-    transition: color 0.2s ease-in;
+  .playlist-container {
+    display: inline-block;
+    margin: 20px auto;
+    border: 1.5px solid #f9a8d4;
+    border-radius: 12px;
+    padding: 16px 24px;
+    min-width: 320px;
+    background: #fff0f6;
   }
-  
+
+  .playlist-title {
+    font-size: 1em;
+    font-weight: 600;
+    color: #ff69b4;
+    margin: 0 0 4px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .playlist-hint {
+    font-size: 0.75em;
+    color: #bbb;
+    margin: 0 0 12px 0;
+  }
+
+  .playlist-ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .song-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: #555;
+    border-radius: 8px;
+    transition: background 0.15s ease, color 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+  }
+
+  .song-item span {
+    display: inline-block;
+    width: 1.2em;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
   .song-item:hover {
-    color: blue;
+    background: #fce7f3;
+    color: #ff69b4;
+  }
+
+  .song-item.active {
+    background: #fce7f3;
+    color: #ff69b4;
+    text-shadow: 0 0 0.5px #ff69b4;
   }
   
