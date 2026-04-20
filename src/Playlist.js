@@ -1,36 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import Etude from './music/Etude op25 n11 \'\'Winter Wind\'\'.mid';
-import MiaSebastian from './music/Mia & Sebastian’s Theme - La La Land OST (Justin Hurwitz).MID';
-import './css/style.css';
-import './App.css'
+import { useEffect, useState } from "react";
+import "./App.css";
+import "./css/style.css";
+import manifest from "./music/manifest";
 
 const Playlist = (props) => {
   const [playlist, setPlaylist] = useState([]);
-  const {currentSong, setCurrentSong, currentSongURL, setCurrentSongURL} = props;
+  const { currentSong, setCurrentSong, currentSongURL, setCurrentSongURL } =
+    props;
 
   useEffect(() => {
     const initializePlaylist = async () => {
-        const promises = [Etude, MiaSebastian].map(async (song) => {
-            const response = await fetch(song);
-            const blob = await response.blob();
-            return blob;//URL.createObjectURL(blob);
-        });
-        const urls = await Promise.all(promises);
-        const initialPlaylist = [        
-            {name: 'Etude op25 n11 \'Winter Wind\'', url: urls[0]},
-            {name: 'Mia & Sebastian’s Theme - La La Land OST (Justin Hurwitz)', url: urls[1]}
-        ]
-        setPlaylist(initialPlaylist);
-        setCurrentSong(initialPlaylist[0].name);
-        setCurrentSongURL(initialPlaylist[0].url);
-    }
+      const initialPlaylist = await Promise.all(
+        manifest.map(async ({ name, file }) => {
+          const response = await fetch(file);
+          const blob = await response.blob();
+          return { name, url: blob };
+        }),
+      );
+      setPlaylist(initialPlaylist);
+      setCurrentSong(initialPlaylist[0].name);
+      setCurrentSongURL(initialPlaylist[0].url);
+    };
     initializePlaylist();
-
   }, []);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    const fileUrl = file;//URL.createObjectURL(file);
+    const fileUrl = file; //URL.createObjectURL(file);
     const newSong = { name: file.name, url: fileUrl };
     setPlaylist([...playlist, newSong]);
   };
@@ -40,7 +36,10 @@ const Playlist = (props) => {
   };
 
   const next = () => {
-    let nextIndex = playlist.findIndex( song => song.name === currentSong && song.url === currentSongURL) + 1;
+    let nextIndex =
+      playlist.findIndex(
+        (song) => song.name === currentSong && song.url === currentSongURL,
+      ) + 1;
     if (nextIndex === playlist.length) {
       nextIndex = 0;
     }
@@ -49,7 +48,10 @@ const Playlist = (props) => {
   };
 
   const prev = () => {
-    let prevIndex =playlist.findIndex( song => song.name === currentSong && song.url === currentSongURL) - 1;
+    let prevIndex =
+      playlist.findIndex(
+        (song) => song.name === currentSong && song.url === currentSongURL,
+      ) - 1;
     if (prevIndex < 0) {
       prevIndex = playlist.length - 1;
     }
@@ -63,27 +65,38 @@ const Playlist = (props) => {
   };
 
   return (
-    <div style={{textAlign: "center"}}>
-    <h1 style={{
-        fontSize: "2em",
-        fontWeight: "bold",
-        marginTop: "20px",
-        color: "#ff69b4"
-      }}>My Hopeless Romantic Playlist</h1>
+    <div style={{ textAlign: "center" }}>
+      <h1
+        style={{
+          fontSize: "2em",
+          fontWeight: "bold",
+          marginTop: "20px",
+          color: "#ff69b4",
+        }}
+      >
+        My Hopeless Romantic Playlist
+      </h1>
       <ul style={{ listStyleType: "none" }}>
         {playlist.map((song) => (
-          <li key={song.name} onClick={() => handleClick(song)} className="song-item">
+          <li
+            key={song.name}
+            onClick={() => handleClick(song)}
+            className="song-item"
+          >
             {song.name}
           </li>
         ))}
       </ul>
       <input type="file" accept=".mid" onChange={handleFileChange} />
-      <button className='btn' onClick={prev}>Previous</button>
-      <button className='btn' onClick={next}>Next</button>
+      <button className="btn" onClick={prev}>
+        Previous
+      </button>
+      <button className="btn" onClick={next}>
+        Next
+      </button>
       <p>Current Song: {currentSong}</p>
     </div>
   );
-
 };
 
 export default Playlist;

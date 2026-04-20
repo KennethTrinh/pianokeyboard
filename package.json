@@ -15,8 +15,10 @@
     "web-vitals": "^5.2.0"
   },
   "scripts": {
+    "generate-manifest": "node scripts/generate-music-manifest.js",
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "dev": "npm run generate-manifest && react-scripts start",
+    "build": "npm run generate-manifest && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
