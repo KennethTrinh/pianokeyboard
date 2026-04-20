@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { MidiNumbers, Piano } from "react-piano";
 import "react-piano/dist/styles.css";
 import "./App.css";
@@ -16,6 +16,8 @@ function PianoKeyboard() {
   const [currentSong, setCurrentSong] = useState("");
   const [currentSongURL, setCurrentSongURL] = useState("");
 
+  const handleRender = useCallback((notes) => setCurrentNotes(notes), []);
+
   return (
     <div className="mdl-color--grey-100 mdl-color-text--grey-700 mdl-base">
       <div className="mdl-layout mdl-js-layout mdl-layout--fixed-header"></div>
@@ -32,9 +34,7 @@ function PianoKeyboard() {
           />
         </div>
         <MusicPlayer
-          render={(currentNotes) => {
-            setCurrentNotes(currentNotes);
-          }}
+          render={handleRender}
           width={width}
           {...{
             currentSong,

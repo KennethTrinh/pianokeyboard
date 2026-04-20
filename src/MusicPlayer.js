@@ -246,6 +246,12 @@ const MusicPlayer = (props) => {
     };
   }, [isPlaying, pitchValue]);
 
+  useEffect(() => {
+    if (!isPlaying) {
+      processAudio();
+    }
+  }, [props.width]);
+
   const handlePlayPauseClick = () => {
     if (!getCurrentSong()) {
       return;

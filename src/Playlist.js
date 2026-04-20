@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import "./App.css";
 import "./css/style.css";
 import manifest from "./music/manifest";
@@ -99,4 +99,4 @@ const Playlist = (props) => {
   );
 };
 
-export default Playlist;
+export default memo(Playlist);
